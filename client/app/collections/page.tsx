@@ -1,60 +1,59 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TrendingUp, Timer } from "lucide-react"
-import { NFTCard } from "../(components)/NFTCard"
-import { NFTModal } from "../(components)/NFTModal"
+import { useState, useEffect } from "react";
+import { ethers } from "ethers";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { TrendingUp, Timer } from "lucide-react";
+import { NFTCard } from "../(components)/NFTCard";
+import { NFTModal } from "../(components)/NFTModal";
+import abi from "./abi";
+import { useAccount } from "wagmi";
 
-const nfts = [
-  {
-    id: 1,
-    name: "Dragon Slayer Knight",
-    tier: "legendary",
-    price: 2.5,
-    timeLeft: "2h 15m",
-    image: "/knight2.jpeg?height=400&width=400",
-    likes: 234,
-    views: 1502,
-  },
-  {
-    id: 2,
-    name: "Mystic Queen",
-    tier: "epic",
-    price: 1.8,
-    timeLeft: "5h 30m",
-    image: "/placeholder.svg?height=400&width=400",
-    likes: 189,
-    views: 1205,
-  },
-  {
-    id: 3,
-    name: "Royal Bishop",
-    tier: "rare",
-    price: 0.8,
-    timeLeft: "1d 3h",
-    image: "/placeholder.svg?height=400&width=400",
-    likes: 145,
-    views: 892,
-  },
-  {
-    id: 4,
-    name: "Loyal Pawn",
-    tier: "common",
-    price: 0.2,
-    timeLeft: "2d 12h",
-    image: "/placeholder.svg?height=400&width=400",
-    likes: 67,
-    views: 445,
-  },
-]
+// Contract Details
+const CONTRACT_ADDRESS = "0x800991Fa16f703eF65293681C78ca44B42707748";
 
 export default function NFTMarketplace() {
-  const [filter, setFilter] = useState("all")
-  const [sort, setSort] = useState("price-high")
-  const [selectedNFT, setSelectedNFT] = useState(null)
+  const [filter, setFilter] = useState("all");
+  const [sort, setSort] = useState("price-high");
+  const [selectedNFT, setSelectedNFT] = useState(null);
+  const [nfts, setNfts] = useState([]);
+  const { address } = useAccount();
+
+  useEffect(() => {
+    async function fetchNFTs() {
+      if (!window.ethereum) {
+        console.error("MetaMask is not installed.");
+        return;
+      }
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      
+      console.log(address);
+
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, provider);
+      console.log(contract);
+      
+      try {
+        const [tokenIds, tokenURIs] = await contract.getUserTokens(address);
+        console.log(tokenURIs);
+        
+        // setNfts(fetchedNFTs);
+      } catch (error) {
+        console.error("Error fetching NFTs:", error);
+      }
+    }
+
+    fetchNFTs();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black text-white">
@@ -131,6 +130,5 @@ export default function NFTMarketplace() {
         {selectedNFT && <NFTModal nft={selectedNFT} onClose={() => setSelectedNFT(null)} />}
       </AnimatePresence>
     </div>
-  )
+  );
 }
-

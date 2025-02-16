@@ -1,0 +1,16 @@
+{
+    "name": "Knight",
+    "description": "A unique NFT representing the Knight chess piece.",
+    "image": "QmV3kYtswsrQjbNTeyG679i5s6Q1qPei6apeiB9wBFrB2a", 
+    "attributes": [
+      {
+        "trait_type": "Tier",
+        "value": "Legendary"
+      },
+      {
+        "trait_type": "Weight",
+        "value": "60"
+      }
+    ]
+}
+  
