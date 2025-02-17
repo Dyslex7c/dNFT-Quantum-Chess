@@ -7,12 +7,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TrendingUp, Timer } from "lucide-react"
 import { NFTCard } from "../(components)/NFTCard"
 import { NFTModal } from "../(components)/NFTModal"
+import { useRouter } from "next/navigation"
+
+type NFT = {
+  id: number;
+  name: string
+  description?: string
+  image: string
+  price: number
+  timeLeft: string
+  likes: number
+  views: number
+  tier: "legendary" | "epic" | "rare" | "common"
+};
 
 const nfts = [
   {
     id: 1,
     name: "Dragon Slayer Knight",
-    tier: "legendary",
+    tier: "legendary" as "legendary",
     price: 2.5,
     timeLeft: "2h 15m",
     image: "/knight2.jpeg?height=400&width=400",
@@ -22,7 +35,7 @@ const nfts = [
   {
     id: 2,
     name: "Mystic Queen",
-    tier: "epic",
+    tier: "epic" as "epic",
     price: 1.8,
     timeLeft: "5h 30m",
     image: "/placeholder.svg?height=400&width=400",
@@ -32,7 +45,7 @@ const nfts = [
   {
     id: 3,
     name: "Royal Bishop",
-    tier: "rare",
+    tier: "rare" as "rare",
     price: 0.8,
     timeLeft: "1d 3h",
     image: "/placeholder.svg?height=400&width=400",
@@ -42,7 +55,7 @@ const nfts = [
   {
     id: 4,
     name: "Loyal Pawn",
-    tier: "common",
+    tier: "common" as "common",
     price: 0.2,
     timeLeft: "2d 12h",
     image: "/placeholder.svg?height=400&width=400",
@@ -54,7 +67,9 @@ const nfts = [
 export default function NFTMarketplace() {
   const [filter, setFilter] = useState("all")
   const [sort, setSort] = useState("price-high")
-  const [selectedNFT, setSelectedNFT] = useState(null)
+  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null)
+
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black text-white">
@@ -70,7 +85,7 @@ export default function NFTMarketplace() {
             <p className="text-xl text-blue-200 mb-8">
               Collect, trade, and wield unique chess pieces in your journey to mastery
             </p>
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => router.push("/collections")} size="lg" className="bg-blue-600 hover:bg-blue-700">
               Explore Collection
             </Button>
           </motion.div>

@@ -3,7 +3,23 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { X, ExternalLink, Clock, User, Tag } from "lucide-react"
 
-export function NFTModal({ nft, onClose }) {
+interface NFT {
+  name: string
+  description?: string
+  image: string
+  price: number
+  timeLeft: string
+  likes: number
+  views: number
+  tier: "legendary" | "epic" | "rare" | "common"
+}
+
+interface NFTCardProps {
+  nft: NFT
+  onClose: () => void
+}
+
+export function NFTModal({ nft, onClose }: NFTCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}

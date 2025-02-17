@@ -6,7 +6,24 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Crown, Sparkles, Shield, Sword, Timer, Eye, Heart, Coins } from "lucide-react"
 
-export function NFTCard({ nft, onClick }) {
+// Define the NFT type
+interface NFT {
+  name: string
+  description?: string
+  image: string
+  price: number
+  timeLeft: string
+  likes: number
+  views: number
+  tier: "legendary" | "epic" | "rare" | "common"
+}
+
+interface NFTCardProps {
+  nft: NFT
+  onClick: () => void
+}
+
+export function NFTCard({ nft, onClick }: NFTCardProps) {
   const [colorOpacity, setColorOpacity] = useState(0)
 
   useEffect(() => {
@@ -31,10 +48,10 @@ export function NFTCard({ nft, onClick }) {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`relative group rounded-xl overflow-hidden cursor-pointer`}
+      className="relative group rounded-xl overflow-hidden cursor-pointer"
       onClick={onClick}
     >
-      <div className="p-[1px] bg-gradient-to-br ${tierColor}">
+      <div className={`p-[1px] bg-gradient-to-br ${tierColor}`}>
         <div className="bg-gray-900 p-4 h-full relative">
           <motion.div
             className={`absolute inset-0 bg-gradient-to-br ${tierColor}`}
@@ -128,4 +145,3 @@ export function NFTCard({ nft, onClick }) {
     </motion.div>
   )
 }
-
