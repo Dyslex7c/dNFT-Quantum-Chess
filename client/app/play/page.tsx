@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button"
 import { ChevronRight, Origami, ShoppingBag, Sparkles } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import NFTMintingModal from "./(components)/NFTMintingModal"
 
 export default function Dashboard() {
+  const [showMintingModal, setShowMintingModal] = useState(true);
   const [leaderboard, setLeaderboard] = useState([
     { rank: 1, name: "GrandMaster1", elo: 2800, tier: "Grandmaster" },
     { rank: 2, name: "QueenSlayer", elo: 2750, tier: "Master" },
@@ -189,6 +191,7 @@ export default function Dashboard() {
           <Image src="/rook.png" alt="Chess Queen" width={300} height={300} />
         </div>
       </div>
+      {showMintingModal && <NFTMintingModal />}
     </main>
   )
 }
