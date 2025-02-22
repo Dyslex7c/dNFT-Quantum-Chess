@@ -97,3 +97,14 @@ body {
     box-shadow: 0 0 60px rgba(37, 99, 235, 0.3);
   }
 }
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
