@@ -6,6 +6,8 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Crown, Sparkles, Shield, Sword, Coins } from "lucide-react"
 
+const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY
+
 interface NFTAttribute {
   trait_type: string
   value: string
@@ -44,6 +46,12 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
           ? "from-blue-500 to-cyan-600"
           : "from-gray-600 to-gray-700"
 
+  // Compute the image URL
+  const imageUrl =
+    nft.image.startsWith("http")
+      ? nft.image
+      : `${PINATA_GATEWAY || "https://aqua-past-reindeer-831.mypinata.cloud/ipfs/"}${nft.image}`
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -68,7 +76,7 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
             {/* Image */}
             <div className="relative aspect-square rounded-lg overflow-hidden mb-4">
               <Image
-                src={`https://aqua-past-reindeer-831.mypinata.cloud/ipfs/${nft.image}` || "/placeholder.svg"}
+                src={imageUrl}
                 alt={nft.name}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-110"
@@ -125,4 +133,3 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
     </motion.div>
   )
 }
-

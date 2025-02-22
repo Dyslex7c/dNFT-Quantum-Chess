@@ -26,6 +26,7 @@ interface NFT {
   tier: "legendary" | "epic" | "rare" | "common"
   tokenId: string
   ipfsHash: string
+  nftContract: string
 }
 
 interface NFTModalProps {
@@ -36,14 +37,13 @@ interface NFTModalProps {
 const MARKET_CONTRACT_ADDRESS = "0x96DF61c39067B32044e733169250cFdeC0778eC3"
 const NFT_CONTRACT_ADDRESS = "0x84D8779e6f128879F99Ea26a2829318867c87721"
 
-const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
-console.log(PINATA_GATEWAY);
-
+const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY
 
 export function NFTModal({ nft, onClose }: NFTModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const { address } = useAccount()
-
+  console.log(nft);
+  
   // Extracting attributes
   const tier = nft.attributes?.find((attr) => attr.trait_type === "Tier")?.value || "Common"
   const weight = nft.attributes?.find((attr) => attr.trait_type === "Weight")?.value || "Unknown"
@@ -56,6 +56,12 @@ export function NFTModal({ nft, onClose }: NFTModalProps) {
         : tier.toLowerCase() === "rare"
           ? "from-blue-500 to-cyan-600"
           : "from-gray-600 to-gray-700"
+
+  // Compute the image URL
+  const imageUrl =
+    nft.image.startsWith("http")
+      ? nft.image
+      : `${PINATA_GATEWAY || "https://aqua-past-reindeer-831.mypinata.cloud/ipfs/"}${nft.image}`
 
   const handleSellNFT = async () => {
     if (!window.ethereum || !address) {
@@ -116,7 +122,7 @@ export function NFTModal({ nft, onClose }: NFTModalProps) {
           <div className="w-full md:w-1/2">
             <div className="relative aspect-square rounded-lg overflow-hidden">
               <Image
-                src={`${PINATA_GATEWAY}${nft.image}` || "/placeholder.svg"}
+                src={imageUrl}
                 alt={nft.name}
                 fill
                 className="object-cover"
@@ -159,6 +165,7 @@ export function NFTModal({ nft, onClose }: NFTModalProps) {
               <Button
                 variant="outline"
                 className="w-full py-3 text-white border-blue-600 hover:bg-blue-600/20 transition-colors duration-300"
+                onClick={() => window.open(`https://testnets.opensea.io/assets/amoy/${nft.nftContract}/${nft.tokenId}`, '_blank')}
               >
                 <ExternalLink className="w-5 h-5 mr-2" />
                 View on OpenSea
@@ -170,4 +177,3 @@ export function NFTModal({ nft, onClose }: NFTModalProps) {
     </motion.div>
   )
 }
-
