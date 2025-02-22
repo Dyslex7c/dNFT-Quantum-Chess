@@ -27,6 +27,7 @@ interface NFT {
   views: number
   tier: "legendary" | "epic" | "rare" | "common"
   ipfsHash: string
+  nftContract: string
 }
 
 export default function NFTMarketplace() {
@@ -56,6 +57,7 @@ export default function NFTMarketplace() {
           await Promise.all(
             tokenURIs.map(async (uri, index) => {
               const url = `${PINATA_GATEWAY}${uri}`
+              const tokenId = tokenIds[index];
               try {
                 const response = await fetch(url)
                 if (!response.ok) {
@@ -64,8 +66,9 @@ export default function NFTMarketplace() {
                 const metadata = await response.json()
                 return {
                   ...metadata,
-                  tokenId: tokenIds[index].toString(),
-                  ipfsHash: uri, 
+                  tokenId: tokenId.toString(),
+                  ipfsHash: uri,
+                  nftContract: CONTRACT_ADDRESS,
                 }
               } catch (error) {
                 console.error("Error fetching metadata:", error)
