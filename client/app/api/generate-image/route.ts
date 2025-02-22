@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 
 const NEXT_PUBLIC_NGROK_URL = process.env.NEXT_PUBLIC_NGROK_URL;
 
+
 export async function POST(req: Request) {
+    console.log(NEXT_PUBLIC_NGROK_URL);
   try {
     const body = await req.json();
     const { pieceName } = body;
@@ -24,7 +26,8 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({ prompt: `A high-quality 3D render of a ${pieceName} chess piece, ultra-detailed, realistic, professional lighting, white piece against dark background, studio photography` }),
     });
-
+    console.log(ngrokResponse);
+    
     if (!ngrokResponse.ok) {
       const errorData = await ngrokResponse.json();
       throw new Error(`Ngrok/Colab API Error: ${ngrokResponse.status} - ${errorData?.error || ngrokResponse.statusText}`);
