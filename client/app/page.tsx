@@ -9,11 +9,14 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, Image, ShieldHalf } from "lucide-react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRouter } from "next/navigation";
+import { useSocketContext } from "@/context/SocketContext";
 
 export default function Home() {
   const heroRef = useRef(null);
   const textRef = useRef(null);
   const navigation = useRouter();
+  const { onlinePlayers } = useSocketContext();
+  console.log(onlinePlayers);
 
   useEffect(() => {
     // Initialize smooth scrolling

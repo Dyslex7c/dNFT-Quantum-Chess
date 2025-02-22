@@ -38,7 +38,7 @@ export const SocketContextProvider: React.FC<SocketProviderProps> = ({ children 
 
             setSocket(newSocket);
 
-            newSocket.on("getOnlinePlayers", (users: string[]) => {
+            newSocket.on("activeRooms", (users: string[]) => {
                 setOnlinePlayers(users);
             });
 

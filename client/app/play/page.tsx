@@ -7,6 +7,8 @@ import { ChevronRight, Origami, ShoppingBag, Sparkles } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import NFTMintingModal from "./(components)/NFTMintingModal"
+import { useSocketContext } from "@/context/SocketContext"
+import { useAccount } from "wagmi"
 
 export default function Dashboard() {
   const [showMintingModal, setShowMintingModal] = useState(true);
@@ -16,7 +18,13 @@ export default function Dashboard() {
     { rank: 3, name: "KnightRider", elo: 2700, tier: "Master" },
     { rank: 4, name: "BishopBoss", elo: 2650, tier: "Diamond" },
     { rank: 5, name: "RookieNo1", elo: 2600, tier: "Diamond" },
-  ])
+  ]);
+  const { address } = useAccount();
+  const { socket } = useSocketContext();
+  const [user, setUser] = useState({
+    metamaskId: address,
+    rank: 700
+  })
 
   const navigation = useRouter();
 
@@ -38,7 +46,7 @@ export default function Dashboard() {
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-black via-[#0a0f18] to-black text-white overflow-hidden">
@@ -87,6 +95,7 @@ export default function Dashboard() {
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-8 py-6 text-lg rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.5)] hover:shadow-[0_0_30px_rgba(37,99,235,0.7)] transition-all duration-300"
+                onClick={() => navigation.push("/play/join")}
               >
                 Play Ranked
                 <ChevronRight className="ml-2 h-5 w-5" />
@@ -94,6 +103,7 @@ export default function Dashboard() {
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white px-8 py-6 text-lg rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)] transition-all duration-300"
+                onClick={() => navigation.push("/play/inventory")}
               >
                 Create Custom Game
                 <ChevronRight className="ml-2 h-5 w-5" />
