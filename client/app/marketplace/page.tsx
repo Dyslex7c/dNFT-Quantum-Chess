@@ -71,6 +71,27 @@ export default function NFTMarketplace() {
 
   const router = useRouter();
 
+  // Filter NFTs based on tier
+  const filteredNFTs = nfts.filter((nft) => {
+    return filter === "all" || nft.tier.toLowerCase() === filter.toLowerCase()
+  })
+
+  // Sort filtered NFTs
+  const sortedNFTs = [...filteredNFTs].sort((a, b) => {
+    switch (sort) {
+      case "price-high":
+        return b.price - a.price
+      case "price-low":
+        return a.price - b.price
+      case "recent":
+        // Since we don't have actual listing dates, we'll sort by ID as a proxy
+        // In a real app, you'd sort by actual listing dates
+        return b.id - a.id
+      default:
+        return 0
+    }
+  })
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black text-white">
       {/* Hero Section */}
@@ -134,7 +155,7 @@ export default function NFTMarketplace() {
         {/* NFT Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <AnimatePresence>
-            {nfts.map((nft) => (
+            {sortedNFTs.map((nft) => (
               <NFTCard key={nft.id} nft={nft} onClick={() => setSelectedNFT(nft)} />
             ))}
           </AnimatePresence>
@@ -148,4 +169,3 @@ export default function NFTMarketplace() {
     </div>
   )
 }
-
