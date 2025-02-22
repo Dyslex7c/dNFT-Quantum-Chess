@@ -15,37 +15,60 @@ const NEXT_PUBLIC_PINATA_API_URL = process.env.NEXT_PUBLIC_PINATA_API_URL
 const NEXT_PUBLIC_PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY
 const NEXT_PUBLIC_PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT
 
+// Restructured chess pieces array to track remaining counts
 const chessPieces = [
-  { name: "Pawn", count: 8 },
-  { name: "Rook", count: 2 },
-  { name: "Knight", count: 2 },
-  { name: "Bishop", count: 2 },
-  { name: "Queen", count: 1 },
-  { name: "King", count: 1 },
+  { name: "Pawn", initialCount: 8, remaining: 8 },
+  { name: "Rook", initialCount: 2, remaining: 2 },
+  { name: "Knight", initialCount: 2, remaining: 2 },
+  { name: "Bishop", initialCount: 2, remaining: 2 },
+  { name: "Queen", initialCount: 1, remaining: 1 },
+  { name: "King", initialCount: 1, remaining: 1 },
 ]
 
 export default function NFTMintingModal() {
   const [isOpen, setIsOpen] = useState(true)
   const [imageURL, setImageURL] = useState("")
-  const [currentPieceIndex, setCurrentPieceIndex] = useState(0)
+  const [currentPiece, setCurrentPiece] = useState(chessPieces[0])
   const [mintingStatus, setMintingStatus] = useState("idle")
   const [mintedCount, setMintedCount] = useState(0)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [remainingPieces, setRemainingPieces] = useState([...chessPieces])
 
   useEffect(() => {
-    generateAIChessPieceImage(chessPieces[currentPieceIndex].name)
-  }, [currentPieceIndex])
+    generateAIChessPieceImage(currentPiece.name)
+  }, [currentPiece])
+
+  const selectNextPiece = () => {
+    const updatedPieces = remainingPieces.map(piece => ({
+      ...piece,
+      remaining: piece.name === currentPiece.name ? piece.remaining - 1 : piece.remaining
+    }))
+
+    // Filter out pieces with no remaining counts
+    const availablePieces = updatedPieces.filter(piece => piece.remaining > 0)
+    setRemainingPieces(availablePieces)
+
+    if (availablePieces.length > 0) {
+      // Select the next piece that has remaining counts
+      setCurrentPiece(availablePieces[0])
+    }
+  }
 
   useEffect(() => {
     if (mintingStatus === "success" && mintedCount < 16) {
       setTimeout(() => {
-        setCurrentPieceIndex((prevIndex) => (prevIndex + 1) % chessPieces.length)
+        selectNextPiece()
         setMintingStatus("idle")
       }, 2000)
     }
   }, [mintingStatus, mintedCount])
 
-  const generateAIChessPieceImage = async (pieceName) => {
+  interface GenerateImageResponse {
+    output: string[];
+    error?: string;
+  }
+
+  const generateAIChessPieceImage = async (pieceName: string): Promise<string> => {
     setIsGeneratingImage(true);
     try {
       const response = await fetch("/api/generate-image", {
@@ -53,25 +76,22 @@ export default function NFTMintingModal() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pieceName }),
       });
-  
-      const data = await response.json();
+
+      const data: GenerateImageResponse = await response.json();
       
       if (!response.ok) {
         throw new Error(data.error || `Failed to generate image: ${response.status}`);
       }
       
-      // Check if the output exists and is an array
       if (!data.output || !Array.isArray(data.output) || data.output.length === 0) {
-        console.error("Invalid response format:", data);
         throw new Error("Invalid response format from image generation API");
       }
       
-      // Set the image URL
-      setImageURL(data.output[0]);
-      return data.output[0];
+      const base64Image = `data:image/jpeg;base64,${data.output[0]}`;
+      setImageURL(base64Image);
+      return base64Image;
     } catch (error) {
       console.error("Error generating AI image:", error);
-      // Show a placeholder or fallback image
       setImageURL("/placeholder.svg");
       throw error;
     } finally {
@@ -79,11 +99,24 @@ export default function NFTMintingModal() {
     }
   };
 
-  const generateMetadata = async (piece) => {
+  interface Piece {
+    name: string;
+    initialCount: number;
+    remaining: number;
+  }
+
+  interface Metadata {
+    name: string;
+    description: string;
+    image: string;
+    attributes: { trait_type: string; value: string }[];
+  }
+
+  const generateMetadata = async (piece: Piece): Promise<string> => {
     const imageHash = await uploadImageToPinata(piece)
     console.log(imageHash)
 
-    const metadata = {
+    const metadata: Metadata = {
       name: piece.name,
       description: `A unique NFT representing the ${piece.name} chess piece.`,
       image: imageHash,
@@ -96,7 +129,7 @@ export default function NFTMintingModal() {
     return await uploadMetadataToPinata(metadata)
   }
 
-  const uploadImageToPinata = async (piece) => {
+  const uploadImageToPinata = async (piece: Piece) => {
     try {
       // Step 3: Fetch image and convert to Blob
       const imageResponse = await fetch(imageURL)
@@ -123,7 +156,7 @@ export default function NFTMintingModal() {
     }
   }
 
-  const uploadMetadataToPinata = async (metadata) => {
+  const uploadMetadataToPinata = async (metadata: Metadata) => {
     try {
       const response = await fetch(`${NEXT_PUBLIC_PINATA_API_URL}/pinJSONToIPFS`, {
         method: "POST",
@@ -145,51 +178,51 @@ export default function NFTMintingModal() {
     }
   }
 
-  const getTier = (pieceName) => {
-    switch (pieceName) {
-      case "King":
-      case "Queen":
-        return "Legendary"
-      case "Rook":
-      case "Bishop":
-      case "Knight":
-        return "Epic"
-      default:
-        return "Common"
-    }
+  interface TierMapping {
+    [key: string]: string;
   }
 
-  const getWeight = (pieceName) => {
-    switch (pieceName) {
-      case "King":
-        return 100
-      case "Queen":
-        return 90
-      case "Rook":
-        return 50
-      case "Bishop":
-      case "Knight":
-        return 30
-      default:
-        return 10
-    }
+  const getTier = (pieceName: string): string => {
+    const tierMapping: TierMapping = {
+      King: "Legendary",
+      Queen: "Legendary",
+      Rook: "Epic",
+      Bishop: "Epic",
+      Knight: "Epic",
+      Pawn: "Common",
+    };
+
+    return tierMapping[pieceName] || "Common";
+  }
+
+  interface WeightMapping {
+    [key: string]: number;
+  }
+
+  const getWeight = (pieceName: string): number => {
+    const weightMapping: WeightMapping = {
+      King: 100,
+      Queen: 90,
+      Rook: 50,
+      Bishop: 30,
+      Knight: 30,
+      Pawn: 10,
+    };
+
+    return weightMapping[pieceName] || 10;
   }
 
   const mintNFT = async () => {
     setMintingStatus("minting")
     try {
-      const piece = chessPieces[currentPieceIndex]
-      const metadataHash = await generateMetadata(piece)
+      const metadataHash = await generateMetadata(currentPiece)
 
-      // Connect to the Ethereum network
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       await provider.send("eth_requestAccounts", [])
       const signer = provider.getSigner()
 
-      // Create contract instance
       const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, abi, signer)
 
-      // Mint NFT
       const tx = await nftContract.createToken(metadataHash)
       await tx.wait()
 
@@ -209,7 +242,7 @@ export default function NFTMintingModal() {
         </DialogHeader>
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentPieceIndex}
+            key={currentPiece.name}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -225,17 +258,19 @@ export default function NFTMintingModal() {
                 imageURL && (
                   <Image
                     src={imageURL || "/placeholder.svg"}
-                    alt={chessPieces[currentPieceIndex].name}
+                    alt={currentPiece.name}
                     layout="fill"
                     objectFit="contain"
                   />
                 )
               )}
             </div>
-            <h3 className="text-xl font-semibold mb-2">{chessPieces[currentPieceIndex].name}</h3>
+            <h3 className="text-xl font-semibold mb-2">{currentPiece.name}</h3>
+            <p className="text-sm text-gray-300 mb-2">
+              Remaining: {currentPiece.remaining} / {currentPiece.initialCount}
+            </p>
             <p className="text-sm text-gray-300 mb-4">
-              Tier: {getTier(chessPieces[currentPieceIndex].name)} | Weight:{" "}
-              {getWeight(chessPieces[currentPieceIndex].name)}
+              Tier: {getTier(currentPiece.name)} | Weight: {getWeight(currentPiece.name)}
             </p>
             <Button
               onClick={mintNFT}
