@@ -4,6 +4,21 @@ import { useState } from "react"
 import { Chess, type Square } from "chess.js"
 import { motion, AnimatePresence } from "framer-motion"
 import { useSound } from "use-sound"
+import Image from "next/image"
+
+// Import SVG pieces
+import WhitePawn from "@/public/white-pawn.svg"
+import WhiteKnight from "@/public/white-knight.svg"
+import WhiteBishop from "@/public/white-bishop.svg"
+import WhiteRook from "@/public/white-rook.svg"
+import WhiteQueen from "@/public/white-queen.svg"
+import WhiteKing from "@/public/white-king.svg"
+import BlackPawn from "@/public/black-pawn.svg"
+import BlackKnight from "@/public/black-knight.svg"
+import BlackBishop from "@/public/black-bishop.svg"
+import BlackRook from "@/public/black-rook.svg"
+import BlackQueen from "@/public/black-queen.svg"
+import BlackKing from "@/public/black-king.svg"
 
 export interface Position {
   row: number
@@ -17,15 +32,29 @@ export interface Move {
   captured?: string
   isCheck?: boolean
   isCheckmate?: boolean
+  isEnPassant?: boolean
 }
 
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"]
 const RANKS = ["8", "7", "6", "5", "4", "3", "2", "1"]
 
-// Updated piece Unicode with more visually appealing characters
-const pieceUnicode: Record<string, Record<string, string>> = {
-  w: { p: "♙", n: "♘", b: "♗", r: "♖", q: "♕", k: "♔" },
-  b: { p: "♟", n: "♞", b: "♝", r: "♜", q: "♛", k: "♚" },
+const pieceSvgs: Record<string, Record<string, any>> = {
+  w: {
+    p: WhitePawn,
+    n: WhiteKnight,
+    b: WhiteBishop,
+    r: WhiteRook,
+    q: WhiteQueen,
+    k: WhiteKing,
+  },
+  b: {
+    p: BlackPawn,
+    n: BlackKnight,
+    b: BlackBishop,
+    r: BlackRook,
+    q: BlackQueen,
+    k: BlackKing,
+  },
 }
 
 interface ChessBoardProps {
@@ -45,50 +74,99 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
 
   const board = game.board()
 
+  // Find king positions
+  const findKingPosition = (color: 'w' | 'b'): string | null => {
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const piece = board[row][col]
+        if (piece && piece.type === 'k' && piece.color === color) {
+          return getSquareFromIndices(row, col)
+        }
+      }
+    }
+    return null
+  }
+
   const handleSquareClick = (row: number, col: number) => {
     const square = getSquareFromIndices(row, col)
     const piece = game.get(square as Square)
 
+    // If a square is already selected...
     if (selectedSquare) {
-      const move = game.move({ from: selectedSquare, to: square, promotion: "q" })
-      if (move) {
-        move.captured ? playCaptureSound() : playMoveSound()
-
-        const fromRow = RANKS.indexOf(selectedSquare[1])
-        const fromCol = FILES.indexOf(selectedSquare[0])
-        const last: Move = {
-          from: { row: fromRow, col: fromCol },
-          to: { row, col },
-          piece: pieceUnicode[move.color][move.piece],
-          captured: move.captured ? pieceUnicode[move.color === "w" ? "b" : "w"][move.captured] : undefined,
-          isCheck: game.inCheck(),
-          isCheckmate: game.isCheckmate(),
-        }
-        setLastMove(last)
-        onMove(last)
-
-        setGame(new Chess(game.fen()))
+      // If clicking the same square, deselect it
+      if (selectedSquare === square) {
         setSelectedSquare(null)
         setLegalMoves([])
         return
-      } else {
-        if (piece && ((isWhiteTurn && piece.color === "w") || (!isWhiteTurn && piece.color === "b"))) {
-          setSelectedSquare(square)
-          const moves = game.moves({ square: square as Square, verbose: true }).map((m) => m.to)
-          setLegalMoves(moves)
-        } else {
-          setSelectedSquare(null)
-          setLegalMoves([])
-        }
       }
-    } else {
-      if (piece && ((isWhiteTurn && piece.color === "w") || (!isWhiteTurn && piece.color === "b"))) {
+
+      // If clicking a different piece of the same color, select the new piece
+      if (piece && 
+          ((isWhiteTurn && piece.color === "w") || (!isWhiteTurn && piece.color === "b"))) {
         setSelectedSquare(square)
         const moves = game.moves({ square: square as Square, verbose: true }).map((m) => m.to)
         setLegalMoves(moves)
+        return
+      }
+
+      // Try to make a move to the clicked square
+      const moveAttempt = game.moves({ 
+        square: selectedSquare as Square, 
+        verbose: true 
+      }).find(m => m.to === square)
+
+      if (moveAttempt) {
+        const move = game.move({ 
+          from: selectedSquare, 
+          to: square, 
+          promotion: "q" 
+        })
+
+        if (move) {
+          // Determine if this was an en passant capture
+          const isEnPassant = move.flags.includes('e')
+          
+          if (isEnPassant || move.captured) {
+            playCaptureSound()
+          } else {
+            playMoveSound()
+          }
+
+          const fromRow = RANKS.indexOf(selectedSquare[1])
+          const fromCol = FILES.indexOf(selectedSquare[0])
+          const last: Move = {
+            from: { row: fromRow, col: fromCol },
+            to: { row, col },
+            piece: move.piece,
+            captured: move.captured,
+            isCheck: game.inCheck(),
+            isCheckmate: game.isCheckmate(),
+            isEnPassant: isEnPassant
+          }
+          setLastMove(last)
+          onMove(last)
+
+          setGame(new Chess(game.fen()))
+          setSelectedSquare(null)
+          setLegalMoves([])
+          return
+        }
       }
     }
+
+    // If no square is selected and clicking a valid piece, select it
+    if (piece && ((isWhiteTurn && piece.color === "w") || (!isWhiteTurn && piece.color === "b"))) {
+      setSelectedSquare(square)
+      const moves = game.moves({ square: square as Square, verbose: true }).map((m) => m.to)
+      setLegalMoves(moves)
+    } else {
+      setSelectedSquare(null)
+      setLegalMoves([])
+    }
   }
+
+  const isInCheck = game.inCheck()
+  const checkedKingSquare = isInCheck ? findKingPosition(isWhiteTurn ? 'w' : 'b') : null
 
   return (
     <div className="relative aspect-square w-full max-w-3xl mx-auto p-4">
@@ -111,7 +189,8 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
                 lastMove &&
                 (getSquareFromIndices(lastMove.from.row, lastMove.from.col) === square ||
                   getSquareFromIndices(lastMove.to.row, lastMove.to.col) === square)
-              const pieceSymbol = pieceObj && pieceObj.type ? pieceUnicode[pieceObj.color][pieceObj.type] : ""
+              const isCheckedKing = square === checkedKingSquare
+
               return (
                 <div
                   key={square}
@@ -119,6 +198,7 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
                     ${isBlackSquare ? "bg-gray-600" : "bg-gray-300"}
                     ${isSelected ? "ring-2 ring-yellow-400 ring-opacity-70" : ""}
                     ${isLastMove ? "ring-1 ring-yellow-400 ring-opacity-40" : ""}
+                    ${isCheckedKing ? "bg-red-500 bg-opacity-50" : ""}
                     transition-all duration-200`}
                   onClick={() => handleSquareClick(rowIndex, colIndex)}
                 >
@@ -146,25 +226,31 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
                   {isLegalMove && (
                     <div
                       className={`absolute inset-2 rounded-full ${
-                        pieceSymbol ? "border-4 border-yellow-400 border-opacity-40" : "bg-yellow-400 bg-opacity-20"
+                        pieceObj ? "border-4 border-yellow-400 border-opacity-40" : "bg-yellow-400 bg-opacity-20"
                       }`}
                     ></div>
                   )}
 
                   {/* Chess piece */}
                   <AnimatePresence>
-                    {pieceSymbol && (
+                    {pieceObj && (
                       <motion.div
                         key={`piece-${square}`}
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.5, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="w-4/5 h-4/5 cursor-pointer hover:scale-110 transition-transform duration-200"
+                        className={`w-4/5 h-4/5 cursor-pointer hover:scale-110 transition-transform duration-200 
+                          ${isCheckedKing ? "drop-shadow-[0_0_10px_rgba(239,68,68,0.7)]" : ""}`}
                       >
-                        <span className={`text-4xl ${pieceObj?.color === "w" ? "text-white" : "text-black"}`}>
-                          {pieceSymbol}
-                        </span>
+                        <Image
+                          src={pieceSvgs[pieceObj.color][pieceObj.type] || "/placeholder.svg"}
+                          alt={`${pieceObj.color === "w" ? "White" : "Black"} ${pieceObj.type}`}
+                          width={50}
+                          height={50}
+                          className="w-full h-full"
+                          priority
+                        />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -183,4 +269,3 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
     </div>
   )
 }
-
