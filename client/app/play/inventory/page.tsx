@@ -23,13 +23,12 @@ const Page = () => {
 		// Room Created Listener (For Player 1)
 		socket.on("roomCreated", (data) => {
 			console.log("Room created:", data);
-			navigation.push("/play/inventory");
 		});
 
 		// Game Initialized Listener (For Both Players)
 		socket.on("gameInitialized", (data) => {
 			console.log("Game started:", data);
-			navigation.push("/play/game");
+			navigation.push(`/play/game?id=${data.roomId}`);
 		});
 
 		// Error Listener
