@@ -101,8 +101,8 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
       }
 
       // If clicking a different piece of the same color, select the new piece
-      if (piece && 
-          ((isWhiteTurn && piece.color === "w") || (!isWhiteTurn && piece.color === "b"))) {
+      if (piece &&
+        ((isWhiteTurn && piece.color === "w") || (!isWhiteTurn && piece.color === "b"))) {
         setSelectedSquare(square)
         const moves = game.moves({ square: square as Square, verbose: true }).map((m) => m.to)
         setLegalMoves(moves)
@@ -110,22 +110,22 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
       }
 
       // Try to make a move to the clicked square
-      const moveAttempt = game.moves({ 
-        square: selectedSquare as Square, 
-        verbose: true 
+      const moveAttempt = game.moves({
+        square: selectedSquare as Square,
+        verbose: true
       }).find(m => m.to === square)
 
       if (moveAttempt) {
-        const move = game.move({ 
-          from: selectedSquare, 
-          to: square, 
-          promotion: "q" 
+        const move = game.move({
+          from: selectedSquare,
+          to: square,
+          promotion: "q"
         })
 
         if (move) {
           // Determine if this was an en passant capture
           const isEnPassant = move.flags.includes('e')
-          
+
           if (isEnPassant || move.captured) {
             playCaptureSound()
           } else {
@@ -199,18 +199,16 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
                   {/* Coordinate labels */}
                   {colIndex === 0 && (
                     <span
-                      className={`absolute left-1 top-1 text-xs font-semibold ${
-                        isBlackSquare ? "text-gray-300" : "text-gray-600"
-                      } opacity-60`}
+                      className={`absolute left-1 top-1 text-xs font-semibold ${isBlackSquare ? "text-gray-300" : "text-gray-600"
+                        } opacity-60`}
                     >
                       {RANKS[rowIndex]}
                     </span>
                   )}
                   {rowIndex === 7 && (
                     <span
-                      className={`absolute right-1 bottom-1 text-xs font-semibold ${
-                        isBlackSquare ? "text-gray-300" : "text-gray-600"
-                      } opacity-60`}
+                      className={`absolute right-1 bottom-1 text-xs font-semibold ${isBlackSquare ? "text-gray-300" : "text-gray-600"
+                        } opacity-60`}
                     >
                       {FILES[colIndex]}
                     </span>
@@ -219,9 +217,8 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
                   {/* Legal move indicator */}
                   {isLegalMove && (
                     <div
-                      className={`absolute inset-2 rounded-full ${
-                        pieceObj ? "border-4 border-yellow-400 border-opacity-40" : "bg-yellow-400 bg-opacity-20"
-                      }`}
+                      className={`absolute inset-2 rounded-full ${pieceObj ? "border-4 border-yellow-400 border-opacity-40" : "bg-yellow-400 bg-opacity-20"
+                        }`}
                     ></div>
                   )}
 

@@ -18,6 +18,7 @@ export const fetchMarketItems = async () => {
   if (contract) {
     try {
       const items = await contract.fetchMarketItems()
+      console.log(items);
       return items.map((item: any) => ({
         id: item[0].toNumber(),
         nftContract: item[1],

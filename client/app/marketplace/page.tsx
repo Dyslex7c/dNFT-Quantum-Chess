@@ -36,6 +36,7 @@ export default function NFTMarketplace() {
     }
     loadNFTs()
   }, [])
+  console.log(nfts);
 
   // Filter NFTs based on tier (you may need to adjust this based on your actual data)
   const filteredNFTs = nfts.filter((nft) => {
