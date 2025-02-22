@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import { cookieToInitialState } from "wagmi";
 import { getConfig } from "./config";
 import { headers } from "next/headers";
+import { SocketContextProvider } from "@/context/SocketContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,9 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers initialState={initialState}>
-          {children}
+          <SocketContextProvider>
+            {children}
+          </SocketContextProvider>
         </Providers>
       </body>
     </html>
