@@ -37,7 +37,6 @@ export default function Dashboard() {
     abi: abi,
     functionName: 'hasPaidFee',
     args: [address],
-    watch: true,
   });
 
   const navigation = useRouter();
@@ -70,25 +69,25 @@ export default function Dashboard() {
             Welcome To Chess Forge
           </h1>
           <Button
-  onClick={() => {
-    if (!hasPaidPlatformFee) {
-      setShowPlatformFeeModal(true);
-    } else {
-      setShowMintingModal(true);
-    }
-  }}
-  className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white px-6 py-2 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)] transition-all duration-300"
->
-  <Plus className="mr-2 h-5 w-5" />
-  Mint NFTs
-</Button>
+            onClick={() => {
+              if (!hasPaidPlatformFee) {
+                setShowPlatformFeeModal(true);
+              } else {
+                setShowMintingModal(true);
+              }
+            }}
+            className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white px-6 py-2 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)] transition-all duration-300"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Mint NFTs
+          </Button>
           <Button
-  onClick={() => setShowProofModal(true)}
-  className="mr-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-6 py-2 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.5)] hover:shadow-[0_0_30px_rgba(37,99,235,0.7)] transition-all duration-300"
->
-  <Shield className="mr-2 h-5 w-5" />
-  Verify Proof
-</Button>
+            onClick={() => setShowProofModal(true)}
+            className="mr-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-6 py-2 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.5)] hover:shadow-[0_0_30px_rgba(37,99,235,0.7)] transition-all duration-300"
+          >
+            <Shield className="mr-2 h-5 w-5" />
+            Verify Proof
+          </Button>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -154,14 +153,24 @@ export default function Dashboard() {
           >
             <h2 className="text-xl font-semibold mb-4">NFT Marketplace</h2>
             <p className="text-sm text-purple-300 mb-4">Buy, sell, and use unique chess pieces in your games!</p>
-            <Button
-              onClick={() => navigation.push("/marketplace")}
-              size="lg"
-              className="w-full bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white px-8 py-4 text-lg rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)] transition-all duration-300"
-            >
-              Visit Marketplace
-              <ShoppingBag className="ml-2 h-5 w-5" />
-            </Button>
+            <div className="space-y-3">
+              <Button
+                onClick={() => navigation.push("/marketplace")}
+                size="lg"
+                className="w-full bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white px-8 py-4 text-lg rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)] transition-all duration-300"
+              >
+                Visit Marketplace
+                <ShoppingBag className="ml-2 h-5 w-5" />
+              </Button>
+              <Button
+                onClick={() => navigation.push("/collections")}
+                size="lg"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-8 py-4 text-lg rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.5)] hover:shadow-[0_0_30px_rgba(37,99,235,0.7)] transition-all duration-300"
+              >
+                Visit Collection
+                <ChevronRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
           </motion.div>
 
           {/* Leaderboard */}
@@ -238,17 +247,17 @@ export default function Dashboard() {
       {showMintingModal && <NFTMintingModal onClose={() => setShowMintingModal(false)} />}
       {showProofModal && <ProofVerificationModal onClose={() => setShowProofModal(false)} />}
       {showMintingModal && <NFTMintingModal onClose={() => setShowMintingModal(false)} />}
-{showProofModal && <ProofVerificationModal onClose={() => setShowProofModal(false)} />}
-{showPlatformFeeModal && (
-  <PlatformFeeModal
-    isOpen={showPlatformFeeModal}
-    onClose={() => setShowPlatformFeeModal(false)}
-    onPaymentSuccess={() => {
-      setShowPlatformFeeModal(false);
-      setShowMintingModal(true);
-    }}
-  />
-)}
+      {showProofModal && <ProofVerificationModal onClose={() => setShowProofModal(false)} />}
+      {showPlatformFeeModal && (
+        <PlatformFeeModal
+          isOpen={showPlatformFeeModal}
+          onClose={() => setShowPlatformFeeModal(false)}
+          onPaymentSuccess={() => {
+            setShowPlatformFeeModal(false);
+            setShowMintingModal(true);
+          }}
+        />
+      )}
     </main>
   )
 }
