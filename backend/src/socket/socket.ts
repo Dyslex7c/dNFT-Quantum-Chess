@@ -31,22 +31,18 @@ io.on("connection", async (socket) => {
             return;
         }
 
-        // Get all active rooms
         const activeRooms = await client.smembers("active_rooms");
 
-        // Check if an available room exists (a room with a missing player)
         for (const roomId of activeRooms) {
             const roomData = await client.hgetall(roomId);
 
             if (roomData.p2Id === "null") {
-                // Found a room with an empty slot, join it instead of creating a new one
                 console.log(`Joining existing room: ${roomId}`);
 
                 await client.hset(roomId, { p2Id: p1Id, R2: R1 });
                 await client.hset("user_rooms", p1Id, roomId);
-                await client.srem("active_rooms", roomId); // Remove from active list since it's now full
+                await client.srem("active_rooms", roomId); 
 
-                // Notify both players
                 const p1SocketId = await client.hget("player_sockets", roomData.p1Id);
                 const p2SocketId = await client.hget("player_sockets", p1Id);
 
@@ -57,7 +53,6 @@ io.on("connection", async (socket) => {
             }
         }
 
-        // No available rooms, create a new one
         const newRoomId = `room_${p1Id}`;
         await client.hset(newRoomId, { p1Id, R1, p2Id: "null", R2: "null" });
         await client.sadd("active_rooms", newRoomId);
@@ -72,7 +67,6 @@ io.on("connection", async (socket) => {
 
 
 
-    // JOIN ROOM EVENT
     // JOIN ROOM EVENT
     socket.on("joinRoom", async ({ p2Id, R2, roomId }) => {
         if (!p2Id || R2 === undefined || !roomId) {
@@ -92,7 +86,6 @@ io.on("connection", async (socket) => {
             return;
         }
 
-        // Join the room
         await client.hset(roomId, { p2Id, R2 });
         await client.hset("user_rooms", p2Id, roomId);
         await client.srem("active_rooms", roomId);
