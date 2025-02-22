@@ -3,19 +3,29 @@ import { Button } from "@/components/ui/button";
 import { Shield, CheckCircle, XCircle } from "lucide-react";
 import { groth16 } from "snarkjs";
 
-const ProofVerificationModal = ({ onClose }) => {
+const ProofVerificationModal = ({ onClose }: { onClose: () => void }) => {
   const [proofFile, setProofFile] = useState(null);
   const [publicFile, setPublicFile] = useState(null);
-  const [verificationStatus, setVerificationStatus] = useState(null);
+  const [verificationStatus, setVerificationStatus] = useState<boolean | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const handleFileUpload = (event, fileType) => {
-    const file = event.target.files[0];
+  interface ProofVerificationModalProps {
+    onClose: () => void;
+  }
+
+  interface FileUploadEvent extends React.ChangeEvent<HTMLInputElement> {
+    target: HTMLInputElement & EventTarget;
+  }
+
+  const handleFileUpload = (event: FileUploadEvent, fileType: 'proof' | 'public') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
     const reader = new FileReader();
 
-    reader.onload = async (e) => {
+    reader.onload = async (e: ProgressEvent<FileReader>) => {
       try {
-        const json = JSON.parse(e.target.result);
+        const json = JSON.parse(e.target?.result as string);
         if (fileType === 'proof') {
           setProofFile(json);
         } else {

@@ -49,7 +49,7 @@ export default function ChessGame() {
       <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto] gap-4 h-full">
         <div className="flex flex-col space-y-4">
           {/* Title */}
-          <h1 className="text-2xl font-bold text-blue-400">Etheredrez</h1>
+          <h1 className="text-2xl font-bold text-blue-400">Chess Forge</h1>
 
           {/* Combined Players + Board Container */}
           <div className="bg-gray-800 rounded-xl p-4 w-fit mx-auto">
