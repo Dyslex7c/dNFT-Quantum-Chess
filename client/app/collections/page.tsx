@@ -11,7 +11,6 @@ import { NFTModal } from "./(components)/NFTModal"
 import abi from "./abi"
 import { useAccount } from "wagmi"
 
-// Contract Details
 const CONTRACT_ADDRESS = "0x84D8779e6f128879F99Ea26a2829318867c87721"
 const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
 
@@ -28,11 +27,6 @@ interface NFT {
   views: number
   tier: "legendary" | "epic" | "rare" | "common"
   ipfsHash: string
-}
-
-interface NFTModalProps {
-  nft: NFT
-  onClose: () => void
 }
 
 export default function NFTMarketplace() {
@@ -68,16 +62,10 @@ export default function NFTMarketplace() {
                   throw new Error(`Failed to fetch metadata for URI: ${uri}`)
                 }
                 const metadata = await response.json()
-                
-                // Get price from contract for this token
-                const price = await contract.getTokenPrice(tokenIds[index])
-                
                 return {
                   ...metadata,
                   tokenId: tokenIds[index].toString(),
-                  ipfsHash: uri,
-                  price: parseFloat(ethers.utils.formatEther(price)), // Convert from wei to ether and store as number
-                  listingDate: new Date().toISOString(), // Add current date as listing date for demonstration
+                  ipfsHash: uri, 
                 }
               } catch (error) {
                 console.error("Error fetching metadata:", error)
@@ -104,14 +92,10 @@ export default function NFTMarketplace() {
   })
 
   const sortedNFTs = [...filteredNFTs].sort((a, b) => {
-    // Convert string prices to numbers for comparison
-    const priceA = parseFloat(a.price.toString() || '0')
-    const priceB = parseFloat(b.price.toString() || '0')
-    console.log(priceA, priceB)    
-    if (sort === "price-high") return priceB - priceA
-    if (sort === "price-low") return priceA - priceB
+    if (sort === "price-high") return b.price - a.price
+    if (sort === "price-low") return a.price - b.price
     if (sort === "recent") {
-      const dateA = a.listingDate ? new Date(a.listingDate) : new Date(0)
+      const dateA = a.listingDate ? new Date(a.listingDate) : new Date(0) 
       const dateB = b.listingDate ? new Date(b.listingDate) : new Date(0)
       return dateB.getTime() - dateA.getTime()
     }    

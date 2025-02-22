@@ -102,7 +102,7 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4 text-blue-400" />
-                <span className="font-mono">{nft.price} ETH</span>
+                <span className="font-mono">{nft.price} POL</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Timer className="w-4 h-4" />

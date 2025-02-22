@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -8,89 +8,65 @@ import { TrendingUp, Timer } from "lucide-react"
 import { NFTCard } from "../(components)/NFTCard"
 import { NFTModal } from "../(components)/NFTModal"
 import { useRouter } from "next/navigation"
+import { fetchMarketItems, createMarketSale } from "@/utils/market"
 
 type NFT = {
-  id: number;
-  name: string
-  description?: string
-  image: string
-  price: number
-  timeLeft: string
-  likes: number
-  views: number
-  tier: "legendary" | "epic" | "rare" | "common"
-};
-
-const nfts = [
-  {
-    id: 1,
-    name: "Dragon Slayer Knight",
-    tier: "legendary" as "legendary",
-    price: 2.5,
-    timeLeft: "2h 15m",
-    image: "/knight2.jpeg?height=400&width=400",
-    likes: 234,
-    views: 1502,
-  },
-  {
-    id: 2,
-    name: "Mystic Queen",
-    tier: "epic" as "epic",
-    price: 1.8,
-    timeLeft: "5h 30m",
-    image: "/placeholder.svg?height=400&width=400",
-    likes: 189,
-    views: 1205,
-  },
-  {
-    id: 3,
-    name: "Royal Bishop",
-    tier: "rare" as "rare",
-    price: 0.8,
-    timeLeft: "1d 3h",
-    image: "/placeholder.svg?height=400&width=400",
-    likes: 145,
-    views: 892,
-  },
-  {
-    id: 4,
-    name: "Loyal Pawn",
-    tier: "common" as "common",
-    price: 0.2,
-    timeLeft: "2d 12h",
-    image: "/placeholder.svg?height=400&width=400",
-    likes: 67,
-    views: 445,
-  },
-]
+  id: number
+  nftContract: string
+  tokenId: number
+  seller: string
+  owner: string
+  price: string
+  sold: boolean
+  ipfsHash: string
+}
 
 export default function NFTMarketplace() {
   const [filter, setFilter] = useState("all")
   const [sort, setSort] = useState("price-high")
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null)
+  const [nfts, setNfts] = useState<NFT[]>([])
 
-  const router = useRouter();
+  const router = useRouter()
 
-  // Filter NFTs based on tier
+  useEffect(() => {
+    const loadNFTs = async () => {
+      const items = await fetchMarketItems()
+      setNfts(items)
+    }
+    loadNFTs()
+  }, [])
+
+  // Filter NFTs based on tier (you may need to adjust this based on your actual data)
   const filteredNFTs = nfts.filter((nft) => {
-    return filter === "all" || nft.tier.toLowerCase() === filter.toLowerCase()
+    return filter === "all" || nft.ipfsHash.includes(filter.toLowerCase())
   })
 
   // Sort filtered NFTs
   const sortedNFTs = [...filteredNFTs].sort((a, b) => {
     switch (sort) {
       case "price-high":
-        return b.price - a.price
+        return Number.parseFloat(b.price) - Number.parseFloat(a.price)
       case "price-low":
-        return a.price - b.price
+        return Number.parseFloat(a.price) - Number.parseFloat(b.price)
       case "recent":
-        // Since we don't have actual listing dates, we'll sort by ID as a proxy
-        // In a real app, you'd sort by actual listing dates
         return b.id - a.id
       default:
         return 0
     }
   })
+
+  const handleBuyNFT = async (nft: NFT) => {
+    const success = await createMarketSale(nft.id, nft.price)
+    if (success) {
+      alert("NFT purchased successfully!")
+      // Refresh the NFT list
+      const items = await fetchMarketItems()
+      setNfts(items)
+    } else {
+      alert("Failed to purchase NFT. Please try again.")
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black text-white">
@@ -164,8 +140,11 @@ export default function NFTMarketplace() {
 
       {/* NFT Modal */}
       <AnimatePresence>
-        {selectedNFT && <NFTModal nft={selectedNFT} onClose={() => setSelectedNFT(null)} />}
+        {selectedNFT && (
+          <NFTModal nft={selectedNFT} onClose={() => setSelectedNFT(null)} onBuy={() => handleBuyNFT(selectedNFT)} />
+        )}
       </AnimatePresence>
     </div>
   )
 }
+
