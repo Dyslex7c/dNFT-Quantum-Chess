@@ -13,6 +13,7 @@ import { useAccount } from "wagmi"
 
 // Contract Details
 const CONTRACT_ADDRESS = "0x84D8779e6f128879F99Ea26a2829318867c87721"
+const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
 
 interface NFT {
   name: string
@@ -57,7 +58,7 @@ export default function NFTMarketplace() {
         const fetchedNFTs: NFT[] = (
           await Promise.all(
             tokenURIs.map(async (uri, index) => {
-              const url = `https://aqua-past-reindeer-831.mypinata.cloud/ipfs/${uri}`
+              const url = `${PINATA_GATEWAY}${uri}`
               try {
                 const response = await fetch(url)
                 if (!response.ok) {

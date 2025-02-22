@@ -37,6 +37,8 @@ const MARKET_CONTRACT_ADDRESS = "0x96DF61c39067B32044e733169250cFdeC0778eC3"
 const NFT_CONTRACT_ADDRESS = "0x84D8779e6f128879F99Ea26a2829318867c87721"
 
 const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
+console.log(PINATA_GATEWAY);
+
 
 export function NFTModal({ nft, onClose }: NFTModalProps) {
   const [isLoading, setIsLoading] = useState(false)
