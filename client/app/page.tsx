@@ -1,28 +1,30 @@
 "use client";
 
-import type React from "react";
-
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import Lenis from "lenis";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Image, ShieldHalf } from "lucide-react";
+import { ChevronRight, Shield, Trophy, Users, Sparkles, GripHorizontal } from 'lucide-react';
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRouter } from "next/navigation";
 import { useSocketContext } from "@/context/SocketContext";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
-  const heroRef = useRef(null);
-  const textRef = useRef(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
   const navigation = useRouter();
   const { onlinePlayers } = useSocketContext();
-  console.log(onlinePlayers);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     // Initialize smooth scrolling
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
     });
 
     function raf(time: number) {
@@ -32,101 +34,166 @@ export default function Home() {
 
     requestAnimationFrame(raf);
 
-    // GSAP animations
+    // Enhanced GSAP animations
     const tl = gsap.timeline();
 
     tl.from(heroRef.current, {
       opacity: 0,
-      duration: 1,
+      duration: 1.2,
       y: 100,
       ease: "power4.out",
-    }).from(
-      textRef.current,
-      {
-        opacity: 0,
-        y: 50,
-        duration: 1,
-        ease: "power4.out",
-      },
-      "-=0.5"
-    );
+    })
+    .from(textRef.current, {
+      opacity: 0,
+      y: 50,
+      duration: 1,
+      ease: "power4.out",
+    }, "-=0.7")
+    .from(statsRef.current, {
+      opacity: 0,
+      scale: 0.9,
+      duration: 0.8,
+      ease: "back.out(1.7)",
+    }, "-=0.5");
 
+    // Cleanup
     return () => {
       lenis.destroy();
     };
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-black via-[#0a0f18] to-black text-white overflow-hidden">
+    <main className="min-h-screen bg-[#030712] text-white overflow-hidden">
+      {/* Enhanced gradient background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-black via-[#0a0f18] to-black" />
+      
+      {/* Animated background particles */}
+      <div className="fixed inset-0 opacity-30">
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] animate-pulse delay-1000" />
+        <div className="absolute bottom-1/4 left-1/2 w-64 h-64 bg-violet-500/20 rounded-full blur-[120px] animate-pulse delay-2000" />
+      </div>
+
       <div className="relative container mx-auto px-4 py-20 md:py-32">
-        {/* Background glow effects */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px]" />
-        <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[100px]" />
+        {/* Header with Connect Button */}
+        <header className="absolute top-0 left-0 right-0 z-50">
+          <nav className="container mx-auto px-4 py-6 flex justify-between items-center">
+            <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-violet-400">
+            </div>
+            <ConnectButton />
+          </nav>
+        </header>
 
-        {/* Connect Button */}
-        <div className="absolute top-4 right-4 z-20">
-          <ConnectButton />
-        </div>
-
-        {/* Hero section */}
-        <div
-          ref={heroRef}
-          className="relative z-10 max-w-4xl mx-auto text-center"
-        >
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">
-            Checkmate your way to
-            <span className="block mt-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600">
-              crypto glory
-            </span>
-          </h1>
-
-          <p className="text-xl md:text-2xl text-white text-opacity-80 mb-8">
-            Etheredrez, Immortalize your victories in NFTs
-          </p>
-
-          <Button
-            onClick={() => navigation.push("/play")}
-            size="lg"
-            className="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-8 py-6 text-lg rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)] hover:shadow-[0_0_30px_rgba(37,99,235,0.7)] transition-all duration-300"
+        {/* Hero section with fixed text visibility */}
+        <div ref={heroRef} className="relative z-10 max-w-6xl mx-auto text-center mt-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-6"
           >
-            Enter Dapp
-            <ChevronRight className="ml-2 h-5 w-5" />
-          </Button>
+            <h1 className="font-bold leading-tight">
+              <span className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300 pb-2 text-8xl">
+                Checkmate Your Way To
+              </span>
+              <span className="inline-block mt-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-blue-500 to-violet-500 pb-4 text-8xl">
+                Crypto Glory
+              </span>
+            </h1>
+          </motion.div>
+
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto"
+          >
+            Compete, win, and immortalize your victories with NFTs.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Button
+              onClick={() => navigation.push("/play")}
+              size="lg"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              className={cn(
+                "relative bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700",
+                "text-white px-8 py-6 text-lg rounded-full transition-all duration-300",
+                "shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]",
+                "overflow-hidden group"
+              )}
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                Enter the Arena
+                <ChevronRight className={cn(
+                  "w-5 h-5 transition-transform duration-300",
+                  isHovered ? "translate-x-1" : ""
+                )} />
+              </span>
+              <div className={cn(
+                "absolute inset-0 bg-gradient-to-r from-violet-600 to-blue-600",
+                "opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              )} />
+            </Button>
+          </motion.div>
+
+          {/* Stats Section */}
+          <div ref={statsRef} className="mt-16">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
+              <StatCard
+                icon={<Users className="w-6 h-6" />}
+                value={onlinePlayers.length || 0}
+                label="Online Players"
+              />
+              <StatCard
+                icon={<GripHorizontal className="w-6 h-6" />}
+                value="10,000+"
+                label="Games Played"
+              />
+              <StatCard
+                icon={<Sparkles className="w-6 h-6" />}
+                value="5,000+"
+                label="NFTs Minted"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Features section */}
-        <div
-          ref={textRef}
-          className="relative z-10 mt-20 md:mt-32 max-w-2xl mx-auto"
-        >
-          <div className="grid gap-6">
+        <div ref={textRef} className="relative z-10 mt-32 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6">
             <Feature
               title="Stake & Win"
-              description="Stake your crypto in matches. Winners take it all."
+              description="Put your skills to the test. Stake crypto, play chess, and claim your rewards. Every match is an opportunity for glory and profit."
               icon="♔"
             />
             <Feature
-              title="Anti-Cheating & Security"
-              description="Our proof system powered by zero-knowledge technology ensures every move and user is genuine"
-              icon={<ShieldHalf />}
+              title="Secure & Fair Play"
+              description="Our zero-knowledge proof system ensures complete fairness and security. Play with confidence knowing every move is verified on-chain."
+              icon={<Shield className="w-6 h-6" />}
             />
             <Feature
               title="NFT Rewards"
-              description="Each victory mints a unique chess piece"
-              icon={<Image />}
+              description="Transform your victories into unique NFT chess pieces. Each win is immortalized as a digital collectible with its own rarity and value."
+              icon={<Trophy className="w-6 h-6" />}
             />
             <Feature
-              title="Tournament"
-              description="Where legends are made and immortalized on-chain"
+              title="Regular Tournaments"
+              description="Compete in weekly tournaments for massive prize pools. Rise through the ranks and become a chess legend on the blockchain."
               icon="♗"
             />
           </div>
         </div>
 
         {/* Chess piece decoration */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-30 hidden lg:block">
-          <div className="relative w-[600px] h-[600px]">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/10 to-blue-500/20 blur-2xl rounded-full" />
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-20 hidden lg:block pointer-events-none">
+          <div className="relative w-[800px] h-[800px]">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/10 to-blue-500/20 blur-3xl rounded-full" />
             <img
               src="/knight.png"
               alt="Chess Knight"
@@ -159,18 +226,52 @@ function Feature({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="group p-6 rounded-2xl border border-white/5 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className="group p-8 rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm hover:bg-white/10 transition-all duration-300"
+    >
       <div className="flex items-start gap-4">
-        <div className="text-2xl text-blue-400">{icon}</div>
+        <div className="text-3xl text-blue-400 bg-blue-400/10 p-3 rounded-lg">
+          {icon}
+        </div>
         <div>
-          <h3 className="text-xl font-semibold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-white">
+          <h3 className="text-xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-violet-400">
             {title}
           </h3>
-          <p className="text-gray-400 group-hover:text-gray-300 transition-colors">
+          <p className="text-gray-400 group-hover:text-gray-300 transition-colors leading-relaxed">
             {description}
           </p>
         </div>
       </div>
-    </div>
+    </motion.div>
+  );
+}
+
+function StatCard({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string | number;
+  label: string;
+}) {
+  return (
+    <motion.div
+      whileHover={{ y: -5 }}
+      className="p-6 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm"
+    >
+      <div className="flex flex-col items-center gap-2 text-center">
+        <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+          {icon}
+        </div>
+        <div className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-violet-400">
+          {value}
+        </div>
+        <div className="text-sm text-gray-400">
+          {label}
+        </div>
+      </div>
+    </motion.div>
   );
 }

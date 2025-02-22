@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { ChevronRight, Origami, ShoppingBag, Sparkles } from "lucide-react"
+import { ChevronRight, Origami, ShoppingBag, Sparkles, Plus } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import NFTMintingModal from "./(components)/NFTMintingModal"
@@ -11,7 +11,7 @@ import { useSocketContext } from "@/context/SocketContext"
 import { useAccount } from "wagmi"
 
 export default function Dashboard() {
-  const [showMintingModal, setShowMintingModal] = useState(true);
+  const [showMintingModal, setShowMintingModal] = useState(false);
   const [leaderboard, setLeaderboard] = useState([
     { rank: 1, name: "GrandMaster1", elo: 2800, tier: "Grandmaster" },
     { rank: 2, name: "QueenSlayer", elo: 2750, tier: "Master" },
@@ -53,8 +53,15 @@ export default function Dashboard() {
       <div className="container mx-auto px-4 py-8">
         <header className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
-            Etheredrez Dashboard
+            Welcome To Chess Forge
           </h1>
+          <Button
+            onClick={() => setShowMintingModal(true)}
+            className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white px-6 py-2 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)] transition-all duration-300"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Mint NFTs
+          </Button>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -201,7 +208,7 @@ export default function Dashboard() {
           <Image src="/rook.png" alt="Chess Queen" width={300} height={300} />
         </div>
       </div>
-      {showMintingModal && <NFTMintingModal />}
+      {showMintingModal && <NFTMintingModal onClose={() => setShowMintingModal(false)} />}
     </main>
   )
 }

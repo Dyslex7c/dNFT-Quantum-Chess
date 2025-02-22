@@ -9,6 +9,10 @@ import Image from "next/image"
 import { ethers } from "ethers"
 import abi from "@/app/collections/abi"
 
+interface NFTMintingModalProps {
+  onClose: () => void;
+}
+
 const NFT_CONTRACT_ADDRESS = "0x84D8779e6f128879F99Ea26a2829318867c87721"
 
 const NEXT_PUBLIC_PINATA_API_URL = process.env.NEXT_PUBLIC_PINATA_API_URL
@@ -24,11 +28,12 @@ const chessPieces = [
   { name: "King", maxCount: 1, image: "/chess-pieces/king.png" },
 ]
 
-export default function NFTMintingModal() {
-  const [isOpen, setIsOpen] = useState(true)
+export default function NFTMintingModal({ onClose }: NFTMintingModalProps) {
   const [selectedPieces, setSelectedPieces] = useState(chessPieces.map((piece) => ({ ...piece, count: 0 })))
   const [mintingStatus, setMintingStatus] = useState("idle")
   const [mintedCount, setMintedCount] = useState(0)
+  const [currentStep, setCurrentStep] = useState<string>("idle")
+  const [generatedImages, setGeneratedImages] = useState<{ [key: string]: string }>({})
 
   const getTier = (pieceName: string): string => {
     const tierMapping: { [key: string]: string } = {
@@ -54,28 +59,61 @@ export default function NFTMintingModal() {
     return weightMapping[pieceName] || 10
   }
 
-  const uploadImageToPinata = async (piece: any) => {
+  const generateImage = async (pieceName: string): Promise<string> => {
     try {
-      const response = await fetch(piece.image)
-      const blob = await response.blob()
-      const file = new File([blob], `${piece.name}.png`, { type: "image/png" })
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pieceName }),
+      });
 
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("pinataMetadata", JSON.stringify({ name: piece.name }))
-      formData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }))
+      if (!response.ok) {
+        throw new Error(`Failed to generate image: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      // Format the base64 string properly for image display
+      return `data:image/jpeg;base64,${data.output[0]}`;
+    } catch (error) {
+      console.error(`Error generating image for ${pieceName}:`, error);
+      throw error;
+    }
+  }
+
+  const uploadGeneratedImageToPinata = async (imageUrl: string, pieceName: string) => {
+    try {
+      // Convert base64 to blob
+      const base64Data = imageUrl.split(',')[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+      const file = new File([blob], `${pieceName}.jpg`, { type: 'image/jpeg' });
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("pinataMetadata", JSON.stringify({ name: pieceName }));
+      formData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
 
       const pinataResponse = await fetch(`${NEXT_PUBLIC_PINATA_API_URL}/pinFileToIPFS`, {
         method: "POST",
         headers: { Authorization: `Bearer ${NEXT_PUBLIC_PINATA_JWT}` },
         body: formData,
-      })
+      });
 
-      const pinataData = await pinataResponse.json()
-      return pinataData.IpfsHash
+      const pinataData = await pinataResponse.json();
+      return pinataData.IpfsHash;
     } catch (error) {
-      console.error("Error uploading image to Pinata:", error)
-      throw error
+      console.error("Error uploading generated image to Pinata:", error);
+      throw error;
     }
   }
 
@@ -101,9 +139,8 @@ export default function NFTMintingModal() {
     }
   }
 
-  const generateMetadata = async (piece: any): Promise<string> => {
-    const imageHash = await uploadImageToPinata(piece)
-    console.log(imageHash)
+  const generateMetadata = async (piece: any, generatedImageUrl: string): Promise<string> => {
+    const imageHash = await uploadGeneratedImageToPinata(generatedImageUrl, piece.name);
 
     const metadata = {
       name: piece.name,
@@ -140,60 +177,90 @@ export default function NFTMintingModal() {
 
   const mintNFTs = async () => {
     setMintingStatus("minting")
+    setCurrentStep("generating")
     try {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       await provider.send("eth_requestAccounts", [])
       const signer = provider.getSigner()
       const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, abi, signer)
 
+      // First, generate all required images
+      const newGeneratedImages: { [key: string]: string } = {};
+      for (const piece of selectedPieces) {
+        if (piece.count > 0) {
+          const imageUrl = await generateImage(piece.name);
+          newGeneratedImages[piece.name] = imageUrl;
+        }
+      }
+      setGeneratedImages(newGeneratedImages);
+      setCurrentStep("minting");
+
+      // Then proceed with minting
       for (const piece of selectedPieces) {
         for (let i = 0; i < piece.count; i++) {
-          const metadataHash = await generateMetadata(piece)
-          const tx = await nftContract.createToken(metadataHash)
-          await tx.wait()
-          setMintedCount((prevCount) => prevCount + 1)
+          const metadataHash = await generateMetadata(piece, newGeneratedImages[piece.name]);
+          const tx = await nftContract.createToken(metadataHash);
+          await tx.wait();
+          setMintedCount((prevCount) => prevCount + 1);
         }
       }
 
       setMintingStatus("success")
+      setCurrentStep("complete")
     } catch (error) {
       console.error("Error minting NFTs:", error)
       setMintingStatus("error")
+      setCurrentStep("error")
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-blue-900 to-purple-900 text-white">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Mint Your Chess NFTs</DialogTitle>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-blue-900 to-purple-900 text-white p-4">
+        <DialogHeader className="mb-2">
+          <DialogTitle className="text-xl font-bold">Mint Your Chess NFTs</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-2 gap-3 mb-3">
           {selectedPieces.map((piece, index) => (
             <motion.div
               key={piece.name}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
-              className="flex flex-col items-center bg-gray-800 rounded-lg p-4"
+              className="flex flex-col items-center bg-gray-800 rounded-lg p-3"
             >
-              <div className="relative w-24 h-24 mb-2">
-                <Image src={piece.image || "/placeholder.svg"} alt={piece.name} layout="fill" objectFit="contain" />
+              <div className="relative w-16 h-16 mb-1">
+                {generatedImages[piece.name] ? (
+                  <div className="relative w-full h-full">
+                    <img
+                      src={generatedImages[piece.name]}
+                      alt={piece.name}
+                      className="absolute inset-0 w-full h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <Image
+                    src={piece.image || "/placeholder.svg"}
+                    alt={piece.name}
+                    layout="fill"
+                    objectFit="contain"
+                  />
+                )}
               </div>
-              <h3 className="text-lg font-semibold mb-1">{piece.name}</h3>
+              <h3 className="text-base font-semibold mb-1">{piece.name}</h3>
               <div className="flex items-center space-x-2">
                 <Button
                   onClick={() => handleDecrement(index)}
-                  disabled={piece.count === 0}
-                  className="px-2 py-1 bg-red-500 hover:bg-red-600"
+                  disabled={piece.count === 0 || mintingStatus === "minting"}
+                  className="px-2 py-1 h-7 bg-red-500 hover:bg-red-600"
                 >
                   -
                 </Button>
-                <span className="text-xl font-bold">{piece.count}</span>
+                <span className="text-lg font-bold">{piece.count}</span>
                 <Button
                   onClick={() => handleIncrement(index)}
-                  disabled={piece.count === piece.maxCount || totalSelectedPieces === 16}
-                  className="px-2 py-1 bg-green-500 hover:bg-green-600"
+                  disabled={piece.count === piece.maxCount || totalSelectedPieces === 16 || mintingStatus === "minting"}
+                  className="px-2 py-1 h-7 bg-green-500 hover:bg-green-600"
                 >
                   +
                 </Button>
@@ -201,16 +268,25 @@ export default function NFTMintingModal() {
             </motion.div>
           ))}
         </div>
-        <div className="text-center mb-4">
-          <p className="text-lg font-semibold">Total Selected: {totalSelectedPieces} / 16</p>
+        <div className="text-center mb-3">
+          <p className="text-base font-semibold">Total Selected: {totalSelectedPieces} / 16</p>
+          {currentStep === "generating" && (
+            <p className="text-sm text-blue-300">Generating AI images...</p>
+          )}
+          {currentStep === "minting" && (
+            <p className="text-sm text-blue-300">Minting NFTs...</p>
+          )}
         </div>
         <Button
           onClick={mintNFTs}
           disabled={totalSelectedPieces === 0 || mintingStatus === "minting"}
-          className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-2 rounded-full shadow-lg transition-all duration-300"
+          className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 h-9 rounded-full shadow-lg transition-all duration-300"
         >
           {mintingStatus === "minting" ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {currentStep === "generating" ? "Generating Images..." : "Minting NFTs..."}
+            </>
           ) : mintingStatus === "success" ? (
             "Minted!"
           ) : (
@@ -218,10 +294,12 @@ export default function NFTMintingModal() {
           )}
         </Button>
         {mintingStatus === "success" && (
-          <p className="text-center text-green-400 mt-2">Successfully minted {mintedCount} NFTs!</p>
+          <p className="text-center text-green-400 mt-2 text-sm">Successfully minted {mintedCount} NFTs!</p>
+        )}
+        {mintingStatus === "error" && (
+          <p className="text-center text-red-400 mt-2 text-sm">Error occurred during the process. Please try again.</p>
         )}
       </DialogContent>
     </Dialog>
   )
 }
-
