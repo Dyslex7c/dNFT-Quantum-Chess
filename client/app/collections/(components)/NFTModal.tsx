@@ -36,6 +36,8 @@ interface NFTModalProps {
 const MARKET_CONTRACT_ADDRESS = "0x96DF61c39067B32044e733169250cFdeC0778eC3"
 const NFT_CONTRACT_ADDRESS = "0x84D8779e6f128879F99Ea26a2829318867c87721"
 
+const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
+
 export function NFTModal({ nft, onClose }: NFTModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const { address } = useAccount()
@@ -112,7 +114,7 @@ export function NFTModal({ nft, onClose }: NFTModalProps) {
           <div className="w-full md:w-1/2">
             <div className="relative aspect-square rounded-lg overflow-hidden">
               <Image
-                src={`https://aqua-past-reindeer-831.mypinata.cloud/ipfs/${nft.image}` || "/placeholder.svg"}
+                src={`${PINATA_GATEWAY}${nft.image}` || "/placeholder.svg"}
                 alt={nft.name}
                 fill
                 className="object-cover"
