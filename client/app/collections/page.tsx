@@ -30,13 +30,16 @@ interface NFT {
   ipfsHash: string
 }
 
+interface NFTModalProps {
+  nft: NFT
+  onClose: () => void
+}
+
 export default function NFTMarketplace() {
   const [filter, setFilter] = useState<string>("all")
   const [sort, setSort] = useState<string>("price-high")
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null)
   const [nfts, setNfts] = useState<NFT[]>([])
-  console.log(nfts);
-  
   const [searchTerm, setSearchTerm] = useState<string>("")
 
   const { address } = useAccount()
@@ -65,10 +68,16 @@ export default function NFTMarketplace() {
                   throw new Error(`Failed to fetch metadata for URI: ${uri}`)
                 }
                 const metadata = await response.json()
+                
+                // Get price from contract for this token
+                const price = await contract.getTokenPrice(tokenIds[index])
+                
                 return {
                   ...metadata,
                   tokenId: tokenIds[index].toString(),
-                  ipfsHash: uri, // Add the ipfsHash to the NFT object
+                  ipfsHash: uri,
+                  price: parseFloat(ethers.utils.formatEther(price)), // Convert from wei to ether and store as number
+                  listingDate: new Date().toISOString(), // Add current date as listing date for demonstration
                 }
               } catch (error) {
                 console.error("Error fetching metadata:", error)
@@ -95,10 +104,14 @@ export default function NFTMarketplace() {
   })
 
   const sortedNFTs = [...filteredNFTs].sort((a, b) => {
-    if (sort === "price-high") return b.price - a.price
-    if (sort === "price-low") return a.price - b.price
+    // Convert string prices to numbers for comparison
+    const priceA = parseFloat(a.price.toString() || '0')
+    const priceB = parseFloat(b.price.toString() || '0')
+    console.log(priceA, priceB)    
+    if (sort === "price-high") return priceB - priceA
+    if (sort === "price-low") return priceA - priceB
     if (sort === "recent") {
-      const dateA = a.listingDate ? new Date(a.listingDate) : new Date(0) // Default to epoch if undefined
+      const dateA = a.listingDate ? new Date(a.listingDate) : new Date(0)
       const dateB = b.listingDate ? new Date(b.listingDate) : new Date(0)
       return dateB.getTime() - dateA.getTime()
     }    
@@ -212,4 +225,3 @@ export default function NFTMarketplace() {
     </div>
   )
 }
-
