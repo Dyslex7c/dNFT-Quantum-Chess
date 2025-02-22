@@ -171,12 +171,6 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
   return (
     <div className="relative aspect-square w-full max-w-3xl mx-auto p-4">
       <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-2xl p-4">
-        {/* Player info */}
-        <div className="absolute -top-8 left-4 flex items-center gap-2">
-          <div className="w-8 h-8 bg-gray-700 rounded-full"></div>
-          <span className="text-white font-semibold">Black</span>
-        </div>
-
         {/* Chess board grid */}
         <div className="grid grid-cols-8 grid-rows-8 h-full w-full gap-px bg-gray-600">
           {board.map((rowData, rowIndex) =>
@@ -258,12 +252,6 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
               )
             }),
           )}
-        </div>
-
-        {/* White player info */}
-        <div className="absolute -bottom-8 left-4 flex items-center gap-2">
-          <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-          <span className="text-white font-semibold">White</span>
         </div>
       </div>
     </div>
