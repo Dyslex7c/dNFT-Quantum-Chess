@@ -1,18 +1,6 @@
 pragma circom 2.0.0;
 
 include "node_modules/circomlib/circuits/poseidon.circom";
-include "node_modules/circomlib/circuits/comparators.circom";
-include "node_modules/circomlib/circuits/multiplexer.circom";
-include "node_modules/circomlib/circuits/switcher.circom";
-
-// Multiplier template for calculating probability products
-template Multiplier() {
-    signal input a;
-    signal input b;
-    signal output out;
-    
-    out <== a * b;
-}
 
 // Helper function to calculate modular inverse
 function modInverse(a, m) {
@@ -177,25 +165,18 @@ function calculatePubKeyY(privateKey) {
     return result_y;
 }
 
-// Main PlayerVerificationCircuit template
-template PlayerVerificationCircuit(numMoves, threshold, minRequiredMoves) {
+// Main PrivateKeyVerification template
+template PrivateKeyVerification() {
     // Public inputs
     signal input publicAddress[2];
-    signal input claimedSkillLevel;
-    signal input accountAge;
     
     // Private inputs (witness)
     signal input privateKey;
-    signal input actualMoveCount;
-    signal input gameplayMoves[numMoves];
-    signal input boardStates[numMoves];
-    signal input moveOutcomeProbabilities[numMoves];
     
     // Output signals
     signal output valid;
-    signal output calibrationStatus;
     
-    // 1. Verify player knows the private key associated with public address
+    // Verify player knows the private key associated with public address
     component poseidon = Poseidon(1);
     poseidon.inputs[0] <== privateKey;
     
@@ -208,67 +189,9 @@ template PlayerVerificationCircuit(numMoves, threshold, minRequiredMoves) {
     calculatedPubX === publicAddress[0];
     calculatedPubY === publicAddress[1];
     
-    // 2. Check if user has enough gameplay history
-    component enoughMoves = GreaterEqThan(32);
-    enoughMoves.in[0] <== actualMoveCount;
-    enoughMoves.in[1] <== minRequiredMoves;
-    
-    // 3. For new users: Calculate a provisional validity based on account age
-    component accountAgeCheck = GreaterEqThan(32);
-    accountAgeCheck.in[0] <== accountAge;
-    accountAgeCheck.in[1] <== 1;
-    
-    // 4. Calculate probability product only for available moves
-    component moveSelector[numMoves];
-    signal validProbabilities[numMoves];
-    component moveExists[numMoves];
-    
-    // Only use probabilities for moves that exist
-    for (var i = 0; i < numMoves; i++) {
-        moveExists[i] = LessThan(32);
-        moveExists[i].in[0] <== i;
-        moveExists[i].in[1] <== actualMoveCount;
-        
-        moveSelector[i] = Switcher();
-        moveSelector[i].sel <== moveExists[i].out;
-        moveSelector[i].L <== 1;
-        moveSelector[i].R <== moveOutcomeProbabilities[i];
-        validProbabilities[i] <== moveSelector[i].outL + moveSelector[i].outR - moveSelector[i].outL * moveSelector[i].sel;
-    }
-    
-    // Calculate the product of available probabilities
-    component multipliers[numMoves-1];
-    signal intermediateProbProducts[numMoves];
-    
-    intermediateProbProducts[0] <== validProbabilities[0];
-    
-    for (var i = 0; i < numMoves-1; i++) {
-        multipliers[i] = Multiplier();
-        multipliers[i].a <== intermediateProbProducts[i];
-        multipliers[i].b <== validProbabilities[i+1];
-        intermediateProbProducts[i+1] <== multipliers[i].out;
-    }
-    
-    signal probabilityProduct;
-    probabilityProduct <== intermediateProbProducts[numMoves-1];
-    
-    // 5. Verify the probability product exceeds threshold
-    component greaterThanThreshold = GreaterThan(64);
-    greaterThanThreshold.in[0] <== probabilityProduct;
-    greaterThanThreshold.in[1] <== threshold;
-    
-    // 6. Determine calibration status
-    calibrationStatus <== 1 - enoughMoves.out;
-    
-    // 7. Final verification logic
-    component finalVerificationSwitch = Switcher();
-    finalVerificationSwitch.sel <== enoughMoves.out;
-    finalVerificationSwitch.L <== accountAgeCheck.out;
-    finalVerificationSwitch.R <== greaterThanThreshold.out;
-    
-    valid <== finalVerificationSwitch.outL + finalVerificationSwitch.outR - finalVerificationSwitch.outL * finalVerificationSwitch.sel;
+    // Set validity
+    valid <== 1;
 }
 
-// Main component instantiation with parameters
-component main {public [publicAddress, claimedSkillLevel, accountAge]} = 
-    PlayerVerificationCircuit(20, 7000000, 10);
+// Main component instantiation
+component main {public [publicAddress]} = PrivateKeyVerification();
