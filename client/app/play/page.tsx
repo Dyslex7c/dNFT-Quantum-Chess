@@ -8,11 +8,15 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import NFTMintingModal from "./(components)/NFTMintingModal"
 import ProofVerificationModal from './(components)/ProofVerificationModal';
+import { useReadContract } from 'wagmi';
+import PlatformFeeModal from "./(components)/PlatformFee"
 import { useSocketContext } from "@/context/SocketContext"
 import { useAccount } from "wagmi"
+import abi from "./(components)/platformfeeabi"
 
 export default function Dashboard() {
   const [showMintingModal, setShowMintingModal] = useState(false);
+  const [showPlatformFeeModal, setShowPlatformFeeModal] = useState(false);
   const [showProofModal, setShowProofModal] = useState(false);
   const [leaderboard, setLeaderboard] = useState([
     { rank: 1, name: "GrandMaster1", elo: 2800, tier: "Grandmaster" },
@@ -27,6 +31,14 @@ export default function Dashboard() {
     metamaskId: address,
     rank: 700
   })
+
+  const { data: hasPaidPlatformFee } = useReadContract({
+    address: "0x6774e9894067b22Da5EA22d6F5964c08c0680a59",
+    abi: abi,
+    functionName: 'hasPaidFee',
+    args: [address],
+    watch: true,
+  });
 
   const navigation = useRouter();
 
@@ -58,12 +70,18 @@ export default function Dashboard() {
             Welcome To Chess Forge
           </h1>
           <Button
-            onClick={() => setShowMintingModal(true)}
-            className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white px-6 py-2 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)] transition-all duration-300"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            Mint NFTs
-          </Button>
+  onClick={() => {
+    if (!hasPaidPlatformFee) {
+      setShowPlatformFeeModal(true);
+    } else {
+      setShowMintingModal(true);
+    }
+  }}
+  className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white px-6 py-2 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)] transition-all duration-300"
+>
+  <Plus className="mr-2 h-5 w-5" />
+  Mint NFTs
+</Button>
           <Button
   onClick={() => setShowProofModal(true)}
   className="mr-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-6 py-2 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.5)] hover:shadow-[0_0_30px_rgba(37,99,235,0.7)] transition-all duration-300"
@@ -219,6 +237,18 @@ export default function Dashboard() {
       </div>
       {showMintingModal && <NFTMintingModal onClose={() => setShowMintingModal(false)} />}
       {showProofModal && <ProofVerificationModal onClose={() => setShowProofModal(false)} />}
+      {showMintingModal && <NFTMintingModal onClose={() => setShowMintingModal(false)} />}
+{showProofModal && <ProofVerificationModal onClose={() => setShowProofModal(false)} />}
+{showPlatformFeeModal && (
+  <PlatformFeeModal
+    isOpen={showPlatformFeeModal}
+    onClose={() => setShowPlatformFeeModal(false)}
+    onPaymentSuccess={() => {
+      setShowPlatformFeeModal(false);
+      setShowMintingModal(true);
+    }}
+  />
+)}
     </main>
   )
 }

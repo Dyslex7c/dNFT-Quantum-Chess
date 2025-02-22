@@ -102,7 +102,7 @@ const ProofVerificationModal = ({ onClose }) => {
             <Button
               onClick={onClose}
               variant="outline"
-              className="flex-1 border-red-500/30 hover:bg-red-900/20 text-white"
+              className="flex-1 border-red-500/30 hover:bg-red-900/20 text-black hover:text-red-500"
             >
               Close
             </Button>
