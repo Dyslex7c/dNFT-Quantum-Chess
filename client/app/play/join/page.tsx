@@ -23,10 +23,7 @@ const JoinPage = () => {
 
 	return (
 		<div className="min-h-screen bg-[#030712] text-white overflow-hidden">
-			{/* Enhanced gradient background */}
 			<div className="fixed inset-0 bg-gradient-to-br from-black via-[#0a0f18] to-black" />
-
-			{/* Animated background particles */}
 			<div className="fixed inset-0 opacity-30">
 				<div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500/20 rounded-full blur-[120px] animate-pulse" />
 				<div className="absolute top-3/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] animate-pulse delay-1000" />

@@ -48,7 +48,6 @@ export default function PlatformFeeModal({ isOpen, onClose, onPaymentSuccess }: 
         address: PLATFORM_FEE_CONTRACT as `0x${string}`,
         abi: abi,
         functionName: 'payPlatformFee',
-        // Remove parseEther since feeAmount is already in wei
         value: feeAmount as bigint,
       };
   

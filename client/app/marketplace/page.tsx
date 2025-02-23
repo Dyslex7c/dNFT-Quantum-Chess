@@ -43,8 +43,6 @@ export default function NFTMarketplace() {
       setLoading(true);
       const items = await fetchMarketItems();
       console.log("Raw fetched NFTs:", items);
-
-      // Normalize tier values
       const itemsWithNormalizedTier: NFT[] = items.map((item: NFT) => {
         const normalizedTier = item.tier ? item.tier.toLowerCase().trim() : "common";
         console.log(`NFT ID: ${item.id}, Original Tier: ${item.tier}, Normalized Tier: ${normalizedTier}`);
@@ -88,8 +86,8 @@ export default function NFTMarketplace() {
       
       if (result.success) {
         alert("NFT purchased successfully!");
-        await loadNFTs(); // Refresh the NFT list
-        setSelectedNFT(null); // Close the modal
+        await loadNFTs(); 
+        setSelectedNFT(null);
       } else {
         throw new Error(result.error || "Transaction failed");
       }
@@ -102,7 +100,6 @@ export default function NFTMarketplace() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black text-white">
-      {/* Hero Section */}
       <div className="relative h-[40vh] overflow-hidden">
         <div className="absolute inset-0 bg-blue-900/20" />
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
@@ -129,8 +126,6 @@ export default function NFTMarketplace() {
           </motion.div>
         </div>
       </div>
-
-      {/* Filters */}
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-wrap gap-4 items-center justify-between mb-8">
           <div className="flex gap-4">
@@ -161,8 +156,6 @@ export default function NFTMarketplace() {
             </Select>
           </div>
         </div>
-
-        {/* NFT Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <AnimatePresence>
             {loading ? (
@@ -185,8 +178,6 @@ export default function NFTMarketplace() {
           </AnimatePresence>
         </div>
       </div>
-
-      {/* NFT Modal */}
       <AnimatePresence>
         {selectedNFT && (
           <NFTModal

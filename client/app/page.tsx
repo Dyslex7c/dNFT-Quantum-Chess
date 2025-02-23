@@ -20,7 +20,6 @@ export default function Home() {
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    // Initialize smooth scrolling
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -34,7 +33,6 @@ export default function Home() {
 
     requestAnimationFrame(raf);
 
-    // Enhanced GSAP animations
     const tl = gsap.timeline();
 
     tl.from(heroRef.current, {
@@ -56,7 +54,6 @@ export default function Home() {
       ease: "back.out(1.7)",
     }, "-=0.5");
 
-    // Cleanup
     return () => {
       lenis.destroy();
     };
@@ -64,10 +61,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#030712] text-white overflow-hidden">
-      {/* Enhanced gradient background */}
       <div className="fixed inset-0 bg-gradient-to-br from-black via-[#0a0f18] to-black" />
-      
-      {/* Animated background particles */}
       <div className="fixed inset-0 opacity-30">
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500/20 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] animate-pulse delay-1000" />
@@ -75,7 +69,6 @@ export default function Home() {
       </div>
 
       <div className="relative container mx-auto px-4 py-20 md:py-32">
-        {/* Header with Connect Button */}
         <header className="absolute top-0 left-0 right-0 z-50">
           <nav className="container mx-auto px-4 py-6 flex justify-between items-center">
             <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-violet-400">
@@ -83,8 +76,6 @@ export default function Home() {
             <ConnectButton />
           </nav>
         </header>
-
-        {/* Hero section with fixed text visibility */}
         <div ref={heroRef} className="relative z-10 max-w-6xl mx-auto text-center mt-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -141,8 +132,6 @@ export default function Home() {
               )} />
             </Button>
           </motion.div>
-
-          {/* Stats Section */}
           <div ref={statsRef} className="mt-16">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
               <StatCard
@@ -163,8 +152,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* Features section */}
         <div ref={textRef} className="relative z-10 mt-32 max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-6">
             <Feature
@@ -189,8 +176,6 @@ export default function Home() {
             />
           </div>
         </div>
-
-        {/* Chess piece decoration */}
         <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-20 hidden lg:block pointer-events-none">
           <div className="relative w-[800px] h-[800px]">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/10 to-blue-500/20 blur-3xl rounded-full" />
@@ -201,8 +186,6 @@ export default function Home() {
             />
           </div>
         </div>
-
-        {/* Powered by section */}
         <div className="absolute bottom-8 right-8">
           <div className="flex items-center gap-2 text-sm text-gray-400">
             Powered by

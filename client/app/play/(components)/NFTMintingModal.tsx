@@ -74,7 +74,6 @@ export default function NFTMintingModal({ onClose }: NFTMintingModalProps) {
       }
 
       const data = await response.json();
-      // Format the base64 string properly for image display
       return `data:image/jpeg;base64,${data.output[0]}`;
     } catch (error) {
       console.error(`Error generating image for ${pieceName}:`, error);
@@ -84,7 +83,6 @@ export default function NFTMintingModal({ onClose }: NFTMintingModalProps) {
 
   const uploadGeneratedImageToPinata = async (imageUrl: string, pieceName: string) => {
     try {
-      // Convert base64 to blob
       const base64Data = imageUrl.split(',')[1];
       const byteCharacters = atob(base64Data);
       const byteNumbers = new Array(byteCharacters.length);
@@ -183,8 +181,6 @@ export default function NFTMintingModal({ onClose }: NFTMintingModalProps) {
       await provider.send("eth_requestAccounts", [])
       const signer = provider.getSigner()
       const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, abi, signer)
-
-      // First, generate all required images
       const newGeneratedImages: { [key: string]: string } = {};
       for (const piece of selectedPieces) {
         if (piece.count > 0) {
@@ -194,8 +190,6 @@ export default function NFTMintingModal({ onClose }: NFTMintingModalProps) {
       }
       setGeneratedImages(newGeneratedImages);
       setCurrentStep("minting");
-
-      // Then proceed with minting
       for (const piece of selectedPieces) {
         for (let i = 0; i < piece.count; i++) {
           const metadataHash = await generateMetadata(piece, newGeneratedImages[piece.name]);

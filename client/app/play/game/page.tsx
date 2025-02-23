@@ -45,7 +45,6 @@ export interface PlayerAccount {
   pieceNFTs: PieceProps[];
 }
 
-// Updated sorting function with correct type annotation
 const sortNFTsForChessPieces = (nfts: NFTProps[]): NFTProps[] => {
   const pieceOrder = [
     // First 8 pawns
@@ -71,7 +70,6 @@ const sortNFTsForChessPieces = (nfts: NFTProps[]): NFTProps[] => {
   const sortedNFTs: NFTProps[] = [];
   const unusedNFTs = [...nfts];
 
-  // Sort for each piece type
   pieceOrder.forEach(({ prefix, positions }) => {
     positions.forEach((position) => {
       const matchingNFTs = unusedNFTs.filter(nft =>
@@ -88,10 +86,7 @@ const sortNFTsForChessPieces = (nfts: NFTProps[]): NFTProps[] => {
       }
     });
   });
-
-  // Add any remaining NFTs at the end
   sortedNFTs.push(...unusedNFTs);
-
   return sortedNFTs;
 };
 
@@ -117,9 +112,7 @@ export default function ChessGame() {
   useEffect(() => {
     const fetchPlayerAccounts = async () => {
       if (!roomData?.p1Id || !roomData?.p2Id) return;
-
       try {
-        // Fetch both players' accounts simultaneously
         const [player1Response, player2Response] = await Promise.all([
           fetch(`http://localhost:5000/api/v1/user/account?id=${roomData.p1Id}`),
           fetch(`http://localhost:5000/api/v1/user/account?id=${roomData.p2Id}`)
@@ -154,8 +147,6 @@ export default function ChessGame() {
         }
         const data = await response.json();
         setRoomData(data);
-
-        // Update board orientation based on player position
         if (address && data.p2Id === address) {
           setIsFlipped(true);
         } else {
@@ -190,8 +181,6 @@ export default function ChessGame() {
     }
   }, [roomData]);
 
-  //console.log(roomData);
-
   useEffect(() => {
     if (gameStatus === "active") {
       const timer = setInterval(() => {
@@ -206,7 +195,6 @@ export default function ChessGame() {
   }, [isWhiteTurn, gameStatus]);
 
   useEffect(() => {
-    // Load and sort NFTs from localStorage
     const storedNFTs = localStorage.getItem("selectedNFTs");
     if (storedNFTs) {
       try {
@@ -214,7 +202,6 @@ export default function ChessGame() {
         if (Array.isArray(parsedNFTs)) {
           const sortedNFTs = sortNFTsForChessPieces(parsedNFTs);
           setNfts(sortedNFTs);
-          // Store the sorted NFTs back in localStorage
           localStorage.setItem("selectedNFTs", JSON.stringify(sortedNFTs));
         }
       } catch (error) {
@@ -260,12 +247,8 @@ export default function ChessGame() {
     <div className="w-screen bg-gray-900 text-white p-4 overflow-hidden">
       <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto] gap-4 h-full">
         <div className="flex flex-col space-y-4">
-          {/* Title */}
           <h1 className="text-2xl font-bold text-blue-400">Chess Forge</h1>
-
-          {/* Combined Players + Board Container */}
           <div className="bg-gray-800 rounded-xl p-4 w-fit mx-auto">
-            {/* White Player Info */}
             <div className="rounded-t-lg bg-gray-750 p-3 border-b border-gray-700">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -283,8 +266,6 @@ export default function ChessGame() {
                 </div>
               </div>
             </div>
-
-            {/* Chess Board */}
             <div className="w-96 h-96 my-4">
               <ChessBoard
                 onMove={handleMove}
@@ -297,8 +278,6 @@ export default function ChessGame() {
                 setDel={setDel}
               />
             </div>
-
-            {/* Black Player Info */}
             <div className="rounded-b-lg bg-gray-750 p-3 border-t border-gray-700">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -318,13 +297,9 @@ export default function ChessGame() {
             </div>
           </div>
         </div>
-
-        {/* Sidebar */}
         <div className="flex flex-col space-y-4">
           <GameInfo moves={moves} />
         </div>
-
-        {/* Display NFTs */}
         <div className="bg-gray-800 rounded-xl p-4 -mt-20">
           <h2 className="text-xl font-bold text-blue-400 mb-2">Your NFTs</h2>
           {valuedNFTs.length > 0 ? (
@@ -342,9 +317,6 @@ export default function ChessGame() {
           )}
         </div>
       </div>
-
-
-      {/* Popup for G */}
       {showPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg">

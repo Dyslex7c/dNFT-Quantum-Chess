@@ -32,7 +32,6 @@ export async function POST(req: Request) {
 
     const imageData = await ngrokResponse.json();
     
-    // Ensure we're returning a clean base64 string without the data URL prefix
     const cleanBase64 = Array.isArray(imageData.image) 
       ? imageData.image[0].replace(/^data:image\/[a-z]+;base64,/, '')
       : imageData.image.replace(/^data:image\/[a-z]+;base64,/, '');

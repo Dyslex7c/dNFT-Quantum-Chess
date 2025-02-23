@@ -117,8 +117,6 @@ export default function NFTMintingModal({ isOpen, onClose, winner, roomData }: N
       await tx.wait()
 
       setMintingStatus("success")
-
-      // Close the modal after successful minting
       setTimeout(() => {
         onClose()
       }, 2000)
@@ -192,4 +190,3 @@ export default function NFTMintingModal({ isOpen, onClose, winner, roomData }: N
     </Dialog>
   )
 }
-

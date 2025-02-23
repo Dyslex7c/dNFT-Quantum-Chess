@@ -44,7 +44,6 @@ export function NFTModal({ nft, onClose }: NFTModalProps) {
   const { address } = useAccount()
   console.log(nft);
   
-  // Extracting attributes
   const tier = nft.attributes?.find((attr) => attr.trait_type === "Tier")?.value || "Common"
   const weight = nft.attributes?.find((attr) => attr.trait_type === "Weight")?.value || "Unknown"
 
@@ -57,7 +56,6 @@ export function NFTModal({ nft, onClose }: NFTModalProps) {
           ? "from-blue-500 to-cyan-600"
           : "from-gray-600 to-gray-700"
 
-  // Compute the image URL
   const imageUrl =
     nft.image.startsWith("http")
       ? nft.image
@@ -81,7 +79,7 @@ export function NFTModal({ nft, onClose }: NFTModalProps) {
       )
 
       const listingPrice = await marketContract.getListingPrice()
-      const price = ethers.utils.parseEther("0.1") // Set a default price of 0.1 ETH
+      const price = ethers.utils.parseEther("0.1") 
 
       const tx = await marketContract.createMarketItem(NFT_CONTRACT_ADDRESS, nft.tokenId, price, nft.ipfsHash, {
         value: listingPrice,

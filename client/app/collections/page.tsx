@@ -31,7 +31,6 @@ interface NFT {
   nftContract: string
 }
 
-// Loading Component
 function Loading() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black flex items-center justify-center">
@@ -43,7 +42,6 @@ function Loading() {
   )
 }
 
-// Empty State Component
 function EmptyState() {
   const router = useRouter()
   
@@ -64,7 +62,6 @@ function EmptyState() {
   )
 }
 
-// Main NFT Marketplace Component
 export default function NFTMarketplace() {
   const [filter, setFilter] = useState<string>("all")
   const [sort, setSort] = useState<string>("price-high")
@@ -150,7 +147,6 @@ export default function NFTMarketplace() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black text-white">
-      {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -184,8 +180,6 @@ export default function NFTMarketplace() {
           </div>
         </motion.div>
       </motion.div>
-
-      {/* Filters */}
       <div className="container mx-auto px-4 py-12">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -220,11 +214,7 @@ export default function NFTMarketplace() {
             </div>
           </div>
         </motion.div>
-
-        {/* Add empty state */}
         {!nfts.length && !address && <EmptyState />}
-
-        {/* NFT Grid */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -238,8 +228,6 @@ export default function NFTMarketplace() {
           </AnimatePresence>
         </motion.div>
       </div>
-
-      {/* NFT Modal */}
       <AnimatePresence>
         {selectedNFT && <NFTModal nft={selectedNFT} onClose={() => setSelectedNFT(null)} />}
       </AnimatePresence>
