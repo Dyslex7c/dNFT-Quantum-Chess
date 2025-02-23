@@ -1,218 +1,146 @@
-```markdown
-# Chess NFT Dynamic Valuation Platform
+# Beyond Checkmate: Chess NFT Platform
+
+A revolutionary chess platform that integrates blockchain technology, NFTs, and advanced game theory to create a skill-based value creation system for chess players.
+
+![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ## Overview
 
-Transforming Chess into a Digital Asset Economy, our platform redefines the classic game by integrating blockchain-powered NFTs with a performance-based valuation system. Every chess piece is an NFT whose value evolves dynamically based on the quality of your moves, measured by a sophisticated algorithm underpinned by game theory and advanced mathematics.
+Beyond Checkmate transforms traditional chess into a dynamic value-creation system by tokenizing chess pieces as NFTs with values that update based on move quality. The platform rewards strategic excellence and skilled gameplay through a mathematically sound economic model, creating new opportunities for chess players to earn based on their abilities.
 
-This isn’t about luck—it’s a pure game of skill where every move counts. Players build real digital wealth by demonstrating strategic mastery, and the system rewards only truly brilliant play.
+## Features
 
-## MVP & USP
+- **SFT-Backed Chess Pieces**: Each chess piece is a unique SFT with dynamic valuation
+- **Real-time Value Updates**: Piece values change based on move quality and strategic importance
+- **Skill-Based Rewards**: Players earn through demonstrated strategic excellence
+- **Zero-Knowledge Proof Integration**: Secure player verification without compromising privacy
+- **Blockchain Integration**: Transparent marketplace and secure value tracking
 
-- **MVP:**  
-  - A fully functional chess platform with traditional gameplay.
-  - NFT minting for every chess piece.
-  - A dynamic valuation system that updates piece values in real time based on in-game performance.
-  - Batch update mechanism for efficient NFT value adjustments.
+## System Architecture
 
-- **USP:**  
-  - **Performance-Based NFTs:** Each piece’s value updates dynamically based on your move quality.
-  - **Skill-Driven Rewards:** Our proprietary algorithm quantifies each move—rewarding smart, strategic play and discounting poor decisions.
-  - **New Revenue Model:** Monetize your chess skills by boosting your NFT portfolio; capture or upgrade pieces based on your in-game performance.
+The platform consists of three primary components:
 
-## Business Proposal
+1. **Chess Gameplay Engine**
+   - Web-based interface
+   - Real-time move evaluation
+   - Integration with Stockfish engine
 
-Our platform merges competitive chess with blockchain technology, creating a transformative revenue stream for players:
-- **Monetization:** Skilled play directly translates to increased NFT values, which can be traded or leveraged for bonuses.
-- **Fair Play:** This is a game of skill—not chance—ensuring rewards are earned solely through superior strategy.
-- **Market Opportunity:** With the rapid growth of eSports and digital collectibles, our solution opens new avenues for monetizing intellectual and strategic talent.
+2. **Dynamic Valuation Model**
+   - Real-time position evaluation
+   - Game theory-based value updates
+   - Performance tracking metrics
 
-## Real-Life Importance
+3. **Blockchain Layer**
+   - SFT minting and management
+   - Smart contract integration
+   - Marketplace functionality
 
-- **Empowering Players:** Turn your chess skills into real digital assets.
-- **Transformative Experience:** Participate in a system where every move adds tangible value.
-- **Future of eSports:** Redefine competitive gaming with blockchain transparency and innovative monetization.
+## Mathematical Model
 
-## How It Works
+### Move Valuation
 
-### Dynamic Valuation Engine
+The value change (∆) for each move is calculated using:
 
-1. **Move Analysis:**  
-   - Each move is evaluated using advanced chess engines (like Stockfish) and our in-house game theory model.
-   - We compute an evaluation score (**S**) for the move, adjusted by a utility factor (**U**) that considers both the player’s and opponent’s ratings.
-   - A time factor (**T<sub>move</sub>**) rewards quick, decisive moves.
-   - The current store value (**W<sub>piece</sub>**) of the piece scales the impact.
+```
+∆ = S × (Uplayer/Uopponent) × Tmove × Wpiece
+```
 
-2. **Delta Calculation:**  
-   The change in the piece’s value for the move is computed as:
-   \[
-   \Delta = S \times \frac{U_{player}}{U_{opponent}} \times T_{move} \times W_{piece}
-   \]
-   Positive Δ indicates a good move that boosts the piece’s value, while negative Δ represents a poor move that diminishes it.
+Where:
+- `S`: Evaluation score of the move
+- `Uplayer/Uopponent`: Utility ratio based on player ratings
+- `Tmove`: Time factor rewarding efficient play
+- `Wpiece`: Current store value of the SFT piece
 
-3. **Cumulative Performance (G):**  
-   We maintain a running sum:
-   \[
-   G = \sum_{i=1}^{n} \Delta_i
-   \]
-   Only moves that improve your overall performance (i.e., where \(G > 0\)) count toward triggering bonuses.
+### Dynamic Threshold
 
-4. **Dynamic Threshold (T):**  
-   A rating- and game-length–adjusted threshold is defined as:
-   \[
-   T = B \times \left(1 + \frac{R_{player} - R_{base}}{K_T}\right) \times \frac{N_{expected}}{N_{actual} + \varepsilon}
-   \]
-   - **\(B\):** Base threshold constant.
-   - **\(R_{player}\) & \(R_{base}\):** Player’s rating and baseline rating.
-   - **\(K_T\):** Scaling constant.
-   - **\(N_{expected}\) & \(N_{actual}\):** Expected total moves vs. moves played.
-   - **\(\varepsilon\):** A small constant for stability.
+The bonus trigger threshold is calculated as:
 
-5. **Bonus Mechanism:**  
-   When the performance index \(P = \max(G, 0)\) drops below \(T\) (i.e., the player performs exceptionally well), a bonus margin:
-   \[
-   M = T - P
-   \]
-   is unlocked. This margin allows the player either to add that value to a chosen piece or to capture an opponent’s piece with a corresponding store value.
+```
+T = B × (1 + (Rplayer - Rbase)/KT) × (Nexpected/Nactual + ε)
+```
 
-### Skill vs. Luck
+## Technical Implementation
 
-Our system is entirely **skill-based**:
-- **Skill-Driven:** Every move is meticulously evaluated through our advanced algorithms. Success is determined by strategy, precision, and quick decision-making.
-- **No Gambling:** Unlike platforms where chance dictates outcomes, here your digital asset growth is exclusively tied to your chess performance.
+### SFT Architecture
 
-## Technology Stack
+Each chess piece SFT includes:
 
-- **Frontend:** Web-based chess interface.
-- **Backend:** Node.js/Express server handling game logic and valuation algorithms.
-- **Chess Engine:** Integration with Stockfish for real-time move evaluation.
-- **Blockchain:** Smart contracts (Ethereum or similar) for NFT minting and batch updates.
-- **Math & Game Theory:** Proprietary models ensure that only superior, well-calculated moves increase NFT values.
+**Static Properties**:
+- Piece type
+- Visual characteristics
+- Historical significance
 
-## Installation & Usage
+**Dynamic Properties**:
+- Current position
+- Movement history
+- Performance metrics
+
+### Zero-Knowledge Proof System
+
+The platform implements zk-SNARKs using:
+- secp256k1 elliptic curve
+- Polynomial encoding of game history
+- Quadratic Arithmetic Programs (QAP)
+
+## Security Features
+
+- Perfect Completeness in zero-knowledge proofs
+- Computational Soundness based on q-SDH and DLP hardness
+- Statistical zero-knowledge with 2^(-λ) security parameter
+- Multi-exponentiation optimization for performance
+- Batched verification for multiple proofs
+
+## Getting Started
 
 ### Prerequisites
 
-- Node.js (v14+ recommended)
-- npm
-- Access to a blockchain environment (e.g., Ethereum testnet/mainnet)
-- Stockfish installed on your system
+- Next.js (v14 or higher)
+- Web3 wallet (MetaMask recommended)
+- Chess engine (Stockfish)
 
-### Setup
+### Installation
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/yourusername/chess-nft-platform.git
-   cd chess-nft-platform
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/beyond-checkmate
 
-2. **Install Dependencies:**
-   ```bash
-   npm install
-   ```
+# Install dependencies
+npm install
 
-3. **Configure Environment:**
-   Create a `.env` file with necessary variables (e.g., PORT, blockchain RPC endpoint).
-
-4. **Run the Application:**
-   ```bash
-   npm start
-   ```
-   The server will run on the configured port (default is 3000).
-
-## API Documentation
-
-### Analyze Piece Moves
-
-**Endpoint:** `POST /analyze-piece`
-
-**Request Body:**
-```json
-{
-  "board": [
-    ["r", "n", "b", "q", "k", "b", "n", "r"],
-    ["p", "p", "p", "p", "p", "p", "p", "p"],
-    ["", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", ""],
-    ["P", "P", "P", "P", "P", "P", "P", "P"],
-    ["R", "N", "B", "Q", "K", "B", "N", "R"]
-  ],
-  "pieceSquare": "g1",
-  "actualMove": "g1f3",
-  "playerRating": 1500,
-  "opponentRating": 1600
-}
+# Configure environment variables
+cp .env.example .env
 ```
 
-**Response Example:**
-```json
-{
-  "playerRating": 1500,
-  "opponentRating": 1600,
-  "movesAnalysis": [
-    { "moveSan": "Nf3", "moveUci": "g1f3", "score": 80, "category": "good" },
-    // additional moves...
-  ],
-  "actualMoveScore": 80,
-  "goodMovesCount": 3,
-  "averageMovesCount": 2,
-  "badMovesCount": 1
-}
-```
+## Future Development
 
-### Calculate Move Score
-
-**Endpoint:** `POST /calculate-move-score`
-
-**Request Body:**
-```json
-{
-  "piece": "N",
-  "fromSquare": "g1",
-  "toSquare": "f3",
-  "board": [
-    ["r", "n", "b", "q", "k", "b", "n", "r"],
-    ["p", "p", "p", "p", "p", "p", "p", "p"],
-    ["", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", ""],
-    ["P", "P", "P", "P", "P", "P", "P", "P"],
-    ["R", "N", "B", "Q", "K", "B", "N", "R"]
-  ]
-}
-```
-
-**Response Example:**
-```json
-{
-  "move": "g1f3",
-  "evaluation": 80
-}
-```
-
-## Roadmap
-
-- **Beta Testing:** Closed beta with chess professionals and enthusiasts.
-- **Marketplace Launch:** Enable NFT trading and dynamic piece enhancements.
-- **Mobile Support:** Expand platform accessibility to mobile devices.
-- **Global Tournaments:** Organize competitive events with real-world rewards.
+- Mobile platform integration
+- Global tournament system
+- Advanced performance analytics
 
 ## Contributing
 
-Contributions are welcome! Please refer to `CONTRIBUTING.md` for guidelines.
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
+## Authors
+
+- Ritesh Das - [GitHub](https://github.com/ritzdas70)
+- Sagnik Basak - [GitHub](https://github.com/sagnikbasak2004)
+- Tamojit Das - [GitHub](https://github.com/tamojitdas181007)
+- Jit Roy - [GitHub](https://github.com/royjit0506)
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contact
+## Citation
 
-For more information or inquiries, contact [your-email@example.com](mailto:your-email@example.com).
+If you use this project in your research, please cite:
 
----
-
-Join us in revolutionizing chess—where every move builds digital wealth, and true skill is the ultimate currency!
+```bibtex
+@conference{das2025beyond,
+  title={Beyond Checkmate: Realizing the Game of Chess as a Game Model with SFTs},
+  author={Das, Ritesh and Basak, Sagnik and Das, Tamojit and Roy, Jit},
+  booktitle={IEEE Conference Proceedings},
+  year={2025}
+}
 ```
