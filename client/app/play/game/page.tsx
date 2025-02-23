@@ -16,6 +16,13 @@ interface NFTProps {
   weight: number;
 }
 
+interface ValuedNFTs {
+  ipfsHash: string;
+  name: string;
+  weight: number;
+  value: number;
+}
+
 interface RoomProps {
   p1Id: string;
   p2Id: string;
@@ -86,8 +93,11 @@ export default function ChessGame() {
   const [roomData, setRoomData] = useState<RoomProps | null>(null);
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
+  const [valuedNFTs, setValuedNFTs] = useState<ValuedNFTs[]>([]);
+  const [count, setCount] = useState<number>(0);
+  const [del, setDel] = useState<number>(0);
+  const [showPopup, setShowPopup] = useState<boolean>(false);
 
-  // Fetch room data from the API
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
@@ -113,6 +123,25 @@ export default function ChessGame() {
       fetchRoomData();
     }
   }, [id, address]);
+
+  useEffect(() => {
+    if (roomData?.p1Id) {
+      const fetchValuedNFTs = async () => {
+        try {
+          const response = await fetch(`http://localhost:5000/api/v1/user/my-nfts?id=${roomData.p1Id}`);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+          setValuedNFTs(data);
+        } catch (error) {
+          console.error('Error fetching valued NFTs:', error);
+        }
+      };
+
+      fetchValuedNFTs();
+    }
+  }, [roomData]);
 
   //console.log(roomData);
 
@@ -153,7 +182,14 @@ export default function ChessGame() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const calculateG = () => {
+    return del * (40 / (count + 0.002));
+  };
+
   const handleMove = (move: Move) => {
+    if (isWhiteTurn) {
+      setCount((prev) => prev + 1);
+    }
     setMoves((prev) => [...prev, move]);
     setIsWhiteTurn(!isWhiteTurn);
     const storedNFTs = localStorage.getItem("selectedNFTs");
@@ -163,6 +199,7 @@ export default function ChessGame() {
 
     if (move.isCheckmate) {
       setGameStatus("checkmate");
+      setShowPopup(true);
     } else if (move.isCheck) {
       setGameStatus("check");
     }
@@ -198,7 +235,16 @@ export default function ChessGame() {
 
             {/* Chess Board */}
             <div className="w-96 h-96 my-4">
-              <ChessBoard onMove={handleMove} isWhiteTurn={isWhiteTurn} isFlipped={isFlipped} roomData={roomData} />
+              <ChessBoard
+                onMove={handleMove}
+                isWhiteTurn={isWhiteTurn}
+                isFlipped={isFlipped}
+                roomData={roomData}
+                valuedNFTs={valuedNFTs}
+                setValuedNFTs={setValuedNFTs}
+                count={count}
+                setDel={setDel}
+              />
             </div>
 
             {/* Black Player Info */}
@@ -230,12 +276,13 @@ export default function ChessGame() {
         {/* Display NFTs */}
         <div className="bg-gray-800 rounded-xl p-4 -mt-20">
           <h2 className="text-xl font-bold text-blue-400 mb-2">Your NFTs</h2>
-          {nfts.length > 0 ? (
+          {valuedNFTs.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
-              {nfts.map((nft, index) => (
+              {valuedNFTs.map((nft, index) => (
                 <div key={index} className="p-2 bg-gray-700 rounded-lg text-center">
                   <p className="text-sm text-gray-300 font-medium">{nft.name}</p>
                   <p className="text-sm text-gray-400">Weight: {nft.weight.toFixed(2)}</p>
+                  <p className="text-sm text-gray-400">Value: {nft.value.toFixed(4)}</p>
                 </div>
               ))}
             </div>
@@ -244,6 +291,25 @@ export default function ChessGame() {
           )}
         </div>
       </div>
+
+
+      {/* Popup for G */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 className="text-2xl font-bold text-blue-400 mb-4">Game Over!</h2>
+            <p className="text-lg text-gray-300">
+              G = {calculateG().toFixed(4)}
+            </p>
+            <button
+              onClick={() => setShowPopup(false)}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

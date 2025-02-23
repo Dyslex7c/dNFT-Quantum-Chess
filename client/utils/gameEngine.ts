@@ -8,9 +8,13 @@ export const updatePieceWeight = async (
     R2: string,
     source: string,
     destination: string,
-    initialFen: string // Pass the initial FEN as input
+    initialFen: string,
+    setDel: React.Dispatch<React.SetStateAction<number>>
 ): Promise<number> => {
     try {
+        const chess = new Chess();
+        chess.load(initialFen);
+
         // Fetch the initial evaluation score
         const initialEvalResponse = await fetch(
             `https://stockfish.online/api/s/v2.php?fen=${encodeURIComponent(initialFen)}&depth=10`
@@ -36,7 +40,9 @@ export const updatePieceWeight = async (
         const evalDifference = finalEval - initialEval;
 
         // Update the weight of the piece
-        const delta = evalDifference * ((1+(parseInt(R2)-parseInt(R1))/600)/(1+(parseInt(R1)-parseInt(R2))/600)) * (1/30) * weight;
+        const delta = evalDifference * ((1 + (parseInt(R2) - parseInt(R1)) / 600) / (1 + (parseInt(R1) - parseInt(R2)) / 600)) * (1 / 30) * weight;
+
+        setDel((prev) => prev + delta);
 
         const updatedWeight = weight + delta;
 
