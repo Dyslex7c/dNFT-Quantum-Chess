@@ -1,3 +1,5 @@
+import { Types } from "mongoose";
+
 export interface PieceProps {
     ipfsHash: string;
     weight: number;
@@ -16,4 +18,12 @@ export interface PieceProps {
     weight: number;
     ipfsHash: string;
     position: string;
+}
+
+interface NFT {
+    _id: Types.ObjectId;
+    ipfsHash: string;
+    value: number;
+    weight: number;
+    name: string;
 }
