@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
     return config;
   },
   images: {
-    domains: ["aqua-past-reindeer-831.mypinata.cloud","lavender-main-tiger-401.mypinata.cloud"],
+    domains: ["aqua-past-reindeer-831.mypinata.cloud","lavender-main-tiger-401.mypinata.cloud", "amaranth-secondary-lungfish-281.mypinata.cloud"],
   },
 };
 
