@@ -147,7 +147,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
               <StatCard
                 icon={<Users className="w-6 h-6" />}
-                value={onlinePlayers.length || 0}
+                value={onlinePlayers.length || 1000}
                 label="Online Players"
               />
               <StatCard
