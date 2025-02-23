@@ -221,10 +221,32 @@ export default function ChessGame() {
   };
 
   const calculateT = () => {
-    return ((1 + (parseInt(roomData?.R1 ?? "0") - 1500) / 400) * (20 / (count + 0.002))) / 100.0;
+    return ((1 + (parseInt(roomData?.R1 ?? "0") - 1500) / 400) * (20 / (count + 0.002)));
   }
 
-  const handleMove = (move: Move) => {
+  const updateUser = async (valuedNFTs: PieceProps[]) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/v1/user/update-nfts?id=${roomData?.p1Id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          valuedNFTs: valuedNFTs,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update valued NFTs");
+      }
+
+      console.log("Valued NFTs updated successfully");
+    } catch (error) {
+      console.error("Error updating valued NFTs:", error);
+    }
+  }
+
+  const handleMove = async (move: Move) => {
     if (isWhiteTurn) {
       setCount((prev) => prev + 1);
     }
@@ -238,6 +260,7 @@ export default function ChessGame() {
     if (move.isCheckmate) {
       setGameStatus("checkmate");
       setShowPopup(true);
+      await updateUser(valuedNFTs);
     } else if (move.isCheck) {
       setGameStatus("check");
     }
@@ -334,8 +357,8 @@ export default function ChessGame() {
                   <button className="p-2 bg-blue-400 rounded-md border-none outline-none hover:bg-blue-500">Own Opponent's NFTs</button>
                 </div>
               ) : (
-                <span className="flex w-full">
-                  Sorry, you didn,t cross the threshold! Better Luck Next Time...
+                <span className="flex w-full text-lg text-red-400 font-semibold">
+                  Sorry, you didn't cross the threshold! Better Luck Next Time!
                 </span>
               )
             }
