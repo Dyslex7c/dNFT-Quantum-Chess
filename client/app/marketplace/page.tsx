@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, Timer } from "lucide-react";
 import { NFTCard } from "../(components)/NFTCard";
 import { NFTModal } from "../(components)/NFTModal";
 import { useRouter } from "next/navigation";
@@ -23,6 +22,7 @@ type NFT = {
   image: string;
   timeLeft: string;
   likes: number;
+  tier: string;
 };
 
 export default function NFTMarketplace() {
@@ -42,7 +42,20 @@ export default function NFTMarketplace() {
     try {
       setLoading(true);
       const items = await fetchMarketItems();
-      setNfts(items);
+      console.log("Raw fetched NFTs:", items);
+
+      // Normalize tier values
+      const itemsWithNormalizedTier: NFT[] = items.map((item: NFT) => {
+        const normalizedTier = item.tier ? item.tier.toLowerCase().trim() : "common";
+        console.log(`NFT ID: ${item.id}, Original Tier: ${item.tier}, Normalized Tier: ${normalizedTier}`);
+        return {
+          ...item,
+          tier: normalizedTier,
+        };
+      });
+
+      setNfts(itemsWithNormalizedTier);
+      console.log("Final NFTs after processing:", itemsWithNormalizedTier);
     } catch (error) {
       alert("Failed to load NFTs. Please check your wallet connection.");
     } finally {
@@ -51,9 +64,8 @@ export default function NFTMarketplace() {
   };
 
   const filteredNFTs = nfts.filter((nft) => {
-    if (filter === "all") return true;
-    const nftTier = nft.ipfsHash.toLowerCase();
-    return nftTier.includes(filter.toLowerCase());
+    console.log(`Filtering: NFT Tier = ${nft.tier}, Selected Filter = ${filter}`);
+    return filter === "all" || nft.tier.toLowerCase() === filter.toLowerCase();
   });
 
   const sortedNFTs = [...filteredNFTs].sort((a, b) => {
@@ -122,7 +134,10 @@ export default function NFTMarketplace() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-wrap gap-4 items-center justify-between mb-8">
           <div className="flex gap-4">
-            <Select value={filter} onValueChange={setFilter}>
+            <Select defaultValue={filter} onValueChange={(value) => {
+              console.log("Filter changed to:", value);
+              setFilter(value);
+            }}>
               <SelectTrigger className="w-[180px] bg-blue-950/50 border-blue-800">
                 <SelectValue placeholder="Filter by tier" />
               </SelectTrigger>
@@ -134,7 +149,7 @@ export default function NFTMarketplace() {
                 <SelectItem value="common">Common</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sort} onValueChange={setSort}>
+            <Select defaultValue={sort} onValueChange={setSort}>
               <SelectTrigger className="w-[180px] bg-blue-950/50 border-blue-800">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -144,16 +159,6 @@ export default function NFTMarketplace() {
                 <SelectItem value="recent">Recently Listed</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="border-blue-800">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Trending
-            </Button>
-            <Button variant="outline" className="border-blue-800">
-              <Timer className="w-4 h-4 mr-2" />
-              Live Auctions
-            </Button>
           </div>
         </div>
 

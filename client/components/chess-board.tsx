@@ -20,6 +20,7 @@ import BlackRook from "@/public/black-rook.svg"
 import BlackQueen from "@/public/black-queen.svg"
 import BlackKing from "@/public/black-king.svg"
 import { updatePieceWeight } from "@/utils/gameEngine"
+import NFTMintingModal from "./nft-minting-modal"
 
 // Add interface for NFT mapping
 interface NFTMapping {
@@ -103,6 +104,8 @@ const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setV
   const [playCaptureSound] = useSound("/capture.mp3")
   const [nftMappings, setNftMappings] = useState<NFTMapping[]>([]);
   const [currentFen, setCurrentFen] = useState(game.fen());
+  const [isCheckmateModalOpen, setIsCheckmateModalOpen] = useState(false)
+  const [winner, setWinner] = useState<"white" | "black" | null>(null)
 
   useEffect(() => {
     // Load NFTs and create initial mappings
@@ -278,6 +281,11 @@ const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setV
           // Update the FEN state after the move
           setCurrentFen(game.fen());
 
+          if (game.isCheckmate()) {
+            setWinner(isWhiteTurn ? "white" : "black")
+            setIsCheckmateModalOpen(true)
+          }
+
           setGame(new Chess(game.fen()));
           setSelectedSquare(null);
           setLegalMoves([]);
@@ -300,6 +308,7 @@ const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setV
   const checkedKingSquare = isInCheck ? findKingPosition(isWhiteTurn ? 'w' : 'b') : null
 
   return (
+    <>
     <div className="relative aspect-square w-full max-w-3xl mx-auto p-4">
       <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-2xl p-4">
         <div className="grid grid-cols-8 grid-rows-8 h-full w-full gap-px bg-gray-600">
@@ -382,6 +391,13 @@ const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setV
         </div>
       </div>
     </div>
+    <NFTMintingModal
+        isOpen={isCheckmateModalOpen}
+        onClose={() => setIsCheckmateModalOpen(false)}
+        winner={winner}
+        roomData={roomData}
+      />
+    </>
   );
 }
 

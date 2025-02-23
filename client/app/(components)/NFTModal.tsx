@@ -141,7 +141,7 @@ export function NFTModal({ nft, onClose, onBuy, loading = false }: NFTModalProps
               </Button>
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="w-full text-black hover:text-blue-600"
                 onClick={() => window.open(`https://testnets.opensea.io/assets/amoy/${nft.nftContract}/${nft.tokenId}`, '_blank')}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />

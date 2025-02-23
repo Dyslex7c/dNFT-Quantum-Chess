@@ -164,7 +164,7 @@ export function NFTModal({ nft, onClose }: NFTModalProps) {
               </Button>
               <Button
                 variant="outline"
-                className="w-full py-3 text-white border-blue-600 hover:bg-blue-600/20 transition-colors duration-300"
+                className="w-full py-3 text-black border-blue-600 hover:bg-blue-600/20 hover:text-blue-600 transition-colors duration-300"
                 onClick={() => window.open(`https://testnets.opensea.io/assets/amoy/${nft.nftContract}/${nft.tokenId}`, '_blank')}
               >
                 <ExternalLink className="w-5 h-5 mr-2" />
