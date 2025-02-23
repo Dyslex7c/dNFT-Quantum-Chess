@@ -31,6 +31,20 @@ interface RoomProps {
   roomId: string;
 }
 
+export interface PieceProps {
+  ipfsHash: string;
+  weight: number;
+  name: string;
+  value: number;
+}
+
+export interface PlayerAccount {
+  userName: string;
+  metamaskId: string;
+  rating: number;
+  pieceNFTs: PieceProps[];
+}
+
 // Updated sorting function with correct type annotation
 const sortNFTsForChessPieces = (nfts: NFTProps[]): NFTProps[] => {
   const pieceOrder = [
@@ -97,6 +111,39 @@ export default function ChessGame() {
   const [count, setCount] = useState<number>(0);
   const [del, setDel] = useState<number>(0);
   const [showPopup, setShowPopup] = useState<boolean>(false);
+  const [player1Account, setPlayer1Account] = useState<PlayerAccount | null>(null);
+  const [player2Account, setPlayer2Account] = useState<PlayerAccount | null>(null);
+
+  useEffect(() => {
+    const fetchPlayerAccounts = async () => {
+      if (!roomData?.p1Id || !roomData?.p2Id) return;
+
+      try {
+        // Fetch both players' accounts simultaneously
+        const [player1Response, player2Response] = await Promise.all([
+          fetch(`http://localhost:5000/api/v1/user/account?id=${roomData.p1Id}`),
+          fetch(`http://localhost:5000/api/v1/user/account?id=${roomData.p2Id}`)
+        ]);
+
+        if (!player1Response.ok || !player2Response.ok) {
+          throw new Error("Failed to fetch player accounts");
+        }
+
+        const [player1Data, player2Data] = await Promise.all([
+          player1Response.json(),
+          player2Response.json()
+        ]);
+
+        setPlayer1Account(player1Data);
+        setPlayer2Account(player2Data);
+
+      } catch (error) {
+        console.error("Error fetching player accounts:", error);
+      }
+    };
+
+    fetchPlayerAccounts();
+  }, [roomData?.p1Id, roomData?.p2Id]);
 
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -183,8 +230,12 @@ export default function ChessGame() {
   };
 
   const calculateG = () => {
-    return del * (40 / (count + 0.002));
+    return del * (20 / (count + 0.002));
   };
+
+  const calculateT = () => {
+    return ((1 + (parseInt(roomData?.R1 ?? "0") - 1500) / 400) * (20 / (count + 0.002))) / 100.0;
+  }
 
   const handleMove = (move: Move) => {
     if (isWhiteTurn) {
@@ -222,8 +273,8 @@ export default function ChessGame() {
                     <Crown className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="font-bold">GrandMaster1</div>
-                    <div className="text-sm text-blue-400">{roomData?.R2}</div>
+                    <div className="font-bold">{player2Account?.userName}</div>
+                    <div className="text-sm text-blue-400">{player2Account?.rating}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -255,8 +306,8 @@ export default function ChessGame() {
                     <Crown className="h-5 w-5" />
                   </div>
                   <div>
-                    <div className="font-bold">QueenSlayer</div>
-                    <div className="text-sm text-purple-400">{roomData?.R1}</div>
+                    <div className="font-bold">{player1Account?.userName}</div>
+                    <div className="text-sm text-purple-400">{player1Account?.rating}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -299,8 +350,24 @@ export default function ChessGame() {
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
             <h2 className="text-2xl font-bold text-blue-400 mb-4">Game Over!</h2>
             <p className="text-lg text-gray-300">
-              G = {calculateG().toFixed(4)}
+              Your Game State = {calculateG().toFixed(4)}
             </p>
+            <p className="text-lg text-gray-300">
+              Game Threshold = {calculateT().toFixed(4)}
+            </p>
+            {
+              calculateG() > calculateT() ? (
+                <div className="flex w-full items-center justify-center gap-3 p-1">
+                  <button className="p-2 bg-green-600 rounded-md border-none outline-none hover:bg-green-700">Improve your NFTs</button>
+                  <button className="p-2 bg-blue-400 rounded-md border-none outline-none hover:bg-blue-500">Own Opponent's NFTs</button>
+                </div>
+              ) : (
+                <span className="flex w-full">
+                  Sorry, you didn,t cross the threshold! Better Luck Next Time...
+                </span>
+              )
+            }
+
             <button
               onClick={() => setShowPopup(false)}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
