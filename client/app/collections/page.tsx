@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TrendingUp, Timer, Search, Loader2, PackageOpen } from "lucide-react"
 import { NFTCard } from "./(components)/NFTCard"
 import { NFTModal } from "./(components)/NFTModal"
+import { useRouter } from "next/navigation"
 import abi from "./abi"
 import { useAccount } from "wagmi"
 
@@ -30,7 +31,6 @@ interface NFT {
   nftContract: string
 }
 
-// Loading Component
 function Loading() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black flex items-center justify-center">
@@ -42,8 +42,9 @@ function Loading() {
   )
 }
 
-// Empty State Component
 function EmptyState() {
+  const router = useRouter()
+  
   return (
     <div className="text-center py-20 px-4">
       <PackageOpen className="w-16 h-16 mx-auto text-blue-400 mb-4" />
@@ -51,12 +52,16 @@ function EmptyState() {
       <p className="text-blue-200 mb-6 max-w-md mx-auto">
         Your collection is empty. Start your journey by acquiring unique chess pieces from our marketplace.
       </p>
-      <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full">Explore Marketplace</Button>
+      <Button 
+        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+        onClick={() => router.push("/marketplace")}
+      >
+        Explore Marketplace
+      </Button>
     </div>
   )
 }
 
-// Main NFT Marketplace Component
 export default function NFTMarketplace() {
   const [filter, setFilter] = useState<string>("all")
   const [sort, setSort] = useState<string>("price-high")
@@ -66,6 +71,7 @@ export default function NFTMarketplace() {
   const [isLoading, setIsLoading] = useState(true)
 
   const { address } = useAccount()
+  const router = useRouter()
 
   useEffect(() => {
     async function fetchNFTs() {
@@ -126,7 +132,8 @@ export default function NFTMarketplace() {
     return matchesFilter && matchesSearch
   })
 
-  const sortedNFTs = [...filteredNFTs].sort((a, b) => {
+  const sortedNFTs = [...filteredNFTs].sort((a, b) => 
+  {
     if (sort === "price-high") return b.price - a.price
     if (sort === "price-low") return a.price - b.price
     if (sort === "recent") {
@@ -135,11 +142,11 @@ export default function NFTMarketplace() {
       return dateB.getTime() - dateA.getTime()
     }
     return 0
-  })
+  }
+)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black text-white">
-      {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -162,22 +169,17 @@ export default function NFTMarketplace() {
               move shapes your legacy.
             </p>
             <div className="flex gap-4">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 rounded-full">
-                Explore Collection
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-blue-400 text-blue-400 hover:bg-blue-900/20 rounded-full"
+              <Button 
+                size="lg" 
+                className="bg-blue-600 hover:bg-blue-700 rounded-full"
+                onClick={() => router.push("/marketplace")}
               >
-                Learn More
+                Explore Marketplace
               </Button>
             </div>
           </div>
         </motion.div>
       </motion.div>
-
-      {/* Filters */}
       <div className="container mx-auto px-4 py-12">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -209,24 +211,10 @@ export default function NFTMarketplace() {
                   <SelectItem value="common">Common</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={sort} onValueChange={setSort}>
-                <SelectTrigger className="w-[160px] bg-blue-950/50 border-blue-800 rounded-full">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="recent">Recently Listed</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </motion.div>
-
-        {/* Add empty state */}
         {!nfts.length && !address && <EmptyState />}
-
-        {/* NFT Grid */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -240,12 +228,9 @@ export default function NFTMarketplace() {
           </AnimatePresence>
         </motion.div>
       </div>
-
-      {/* NFT Modal */}
       <AnimatePresence>
         {selectedNFT && <NFTModal nft={selectedNFT} onClose={() => setSelectedNFT(null)} />}
       </AnimatePresence>
     </div>
   )
 }
-

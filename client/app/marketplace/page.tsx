@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, Timer } from "lucide-react";
 import { NFTCard } from "../(components)/NFTCard";
 import { NFTModal } from "../(components)/NFTModal";
 import { useRouter } from "next/navigation";
@@ -23,6 +22,7 @@ type NFT = {
   image: string;
   timeLeft: string;
   likes: number;
+  tier: string;
 };
 
 export default function NFTMarketplace() {
@@ -42,7 +42,18 @@ export default function NFTMarketplace() {
     try {
       setLoading(true);
       const items = await fetchMarketItems();
-      setNfts(items);
+      console.log("Raw fetched NFTs:", items);
+      const itemsWithNormalizedTier: NFT[] = items.map((item: NFT) => {
+        const normalizedTier = item.tier ? item.tier.toLowerCase().trim() : "common";
+        console.log(`NFT ID: ${item.id}, Original Tier: ${item.tier}, Normalized Tier: ${normalizedTier}`);
+        return {
+          ...item,
+          tier: normalizedTier,
+        };
+      });
+
+      setNfts(itemsWithNormalizedTier);
+      console.log("Final NFTs after processing:", itemsWithNormalizedTier);
     } catch (error) {
       alert("Failed to load NFTs. Please check your wallet connection.");
     } finally {
@@ -51,9 +62,8 @@ export default function NFTMarketplace() {
   };
 
   const filteredNFTs = nfts.filter((nft) => {
-    if (filter === "all") return true;
-    const nftTier = nft.ipfsHash.toLowerCase();
-    return nftTier.includes(filter.toLowerCase());
+    console.log(`Filtering: NFT Tier = ${nft.tier}, Selected Filter = ${filter}`);
+    return filter === "all" || nft.tier.toLowerCase() === filter.toLowerCase();
   });
 
   const sortedNFTs = [...filteredNFTs].sort((a, b) => {
@@ -76,8 +86,8 @@ export default function NFTMarketplace() {
       
       if (result.success) {
         alert("NFT purchased successfully!");
-        await loadNFTs(); // Refresh the NFT list
-        setSelectedNFT(null); // Close the modal
+        await loadNFTs(); 
+        setSelectedNFT(null);
       } else {
         throw new Error(result.error || "Transaction failed");
       }
@@ -90,7 +100,6 @@ export default function NFTMarketplace() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black text-white">
-      {/* Hero Section */}
       <div className="relative h-[40vh] overflow-hidden">
         <div className="absolute inset-0 bg-blue-900/20" />
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
@@ -117,12 +126,13 @@ export default function NFTMarketplace() {
           </motion.div>
         </div>
       </div>
-
-      {/* Filters */}
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-wrap gap-4 items-center justify-between mb-8">
           <div className="flex gap-4">
-            <Select value={filter} onValueChange={setFilter}>
+            <Select defaultValue={filter} onValueChange={(value) => {
+              console.log("Filter changed to:", value);
+              setFilter(value);
+            }}>
               <SelectTrigger className="w-[180px] bg-blue-950/50 border-blue-800">
                 <SelectValue placeholder="Filter by tier" />
               </SelectTrigger>
@@ -134,7 +144,7 @@ export default function NFTMarketplace() {
                 <SelectItem value="common">Common</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sort} onValueChange={setSort}>
+            <Select defaultValue={sort} onValueChange={setSort}>
               <SelectTrigger className="w-[180px] bg-blue-950/50 border-blue-800">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -145,19 +155,7 @@ export default function NFTMarketplace() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="border-blue-800">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Trending
-            </Button>
-            <Button variant="outline" className="border-blue-800">
-              <Timer className="w-4 h-4 mr-2" />
-              Live Auctions
-            </Button>
-          </div>
         </div>
-
-        {/* NFT Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <AnimatePresence>
             {loading ? (
@@ -180,8 +178,6 @@ export default function NFTMarketplace() {
           </AnimatePresence>
         </div>
       </div>
-
-      {/* NFT Modal */}
       <AnimatePresence>
         {selectedNFT && (
           <NFTModal

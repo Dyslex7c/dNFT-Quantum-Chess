@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { X, ExternalLink, Clock, User, Tag, Weight } from "lucide-react"
 import { createMarketSale, fetchMarketItems } from "@/utils/market"
 
-// Updated NFT interface to match the marketplace data structure
 interface NFT {
   id: number;
   nftContract: string;
@@ -57,15 +56,12 @@ export function NFTModal({ nft, onClose, onBuy, loading = false }: NFTModalProps
     fetchMetadata();
   }, [nft.ipfsHash]);
 
-  // Helper function to ensure the image URL is valid for Next.js Image
   const getImageUrl = () => {
     const imageUrl = nftMetadata?.image;
     if (!imageUrl) return "/placeholder.svg";
-    // If the image URL already starts with "http" or "/", return it as-is.
     if (imageUrl.startsWith("http") || imageUrl.startsWith("/")) {
       return imageUrl;
     }
-    // Otherwise, assume it's an IPFS hash and prepend the gateway URL.
     const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY || "https://gateway.pinata.cloud/ipfs/";
     return `${PINATA_GATEWAY}${imageUrl}`;
   };
@@ -122,14 +118,6 @@ export function NFTModal({ nft, onClose, onBuy, loading = false }: NFTModalProps
                 <Weight className="w-5 h-5 text-blue-400" />
                 <span className="text-gray-300">Weight: {weight}</span>
               </div>
-              {/* <div className="flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-400" />
-                <span className="text-gray-300">Seller: {nft.seller}</span>
-              </div> */}
-              {/* <div className="flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-400" />
-                <span className="text-gray-300">Owner: {nft.owner}</span>
-              </div> */}
             </div>
             <div className="space-y-2">
               <Button 
@@ -141,7 +129,7 @@ export function NFTModal({ nft, onClose, onBuy, loading = false }: NFTModalProps
               </Button>
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="w-full text-black hover:text-blue-600"
                 onClick={() => window.open(`https://testnets.opensea.io/assets/amoy/${nft.nftContract}/${nft.tokenId}`, '_blank')}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />

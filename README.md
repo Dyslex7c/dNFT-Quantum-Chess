@@ -1,266 +1,146 @@
-# Schrödinger's Token: A Novel Framework for Quantum-Classical Game Theory Implementation on Blockchain with Dynamic NFT Entanglement
+# Beyond Checkmate: Chess NFT Platform
 
-## Abstract
+A revolutionary chess platform that integrates blockchain technology, NFTs, and advanced game theory to create a skill-based value creation system for chess players.
 
-We present a groundbreaking implementation of quantum-classical hybrid gaming mechanics in a blockchain environment, introducing a revolutionary approach to strategic gaming through quantum mechanical principles. Our framework leverages quantum superposition, multi-dimensional entanglement, and quantum teleportation protocols within a modified EVM architecture to create a dynamic chess variant where pieces exhibit complex quantum behaviors. The system utilizes a novel Dynamic-NFT (dNFT) protocol that enables real-time quantum state modifications through zkSNARK-verified state transitions.
+![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)
 
-## 1. Introduction
+## Overview
 
-Traditional chess, while computationally complex, operates within the constraints of classical mechanics. By introducing quantum mechanical principles and blockchain-based state verification, we create a new paradigm of strategic gameplay that exists at the intersection of quantum computing, blockchain technology, and game theory.
+Beyond Checkmate transforms traditional chess into a dynamic value-creation system by tokenizing chess pieces as NFTs with values that update based on move quality. The platform rewards strategic excellence and skilled gameplay through a mathematically sound economic model, creating new opportunities for chess players to earn based on their abilities.
 
-## 2. Theoretical Framework
+## Features
 
-### 2.1 Quantum State Representation
+- **SFT-Backed Chess Pieces**: Each chess piece is a unique SFT with dynamic valuation
+- **Real-time Value Updates**: Piece values change based on move quality and strategic importance
+- **Skill-Based Rewards**: Players earn through demonstrated strategic excellence
+- **Zero-Knowledge Proof Integration**: Secure player verification without compromising privacy
+- **Blockchain Integration**: Transparent marketplace and secure value tracking
 
-Each piece exists in a superposition of states described by a modified density matrix:
+## System Architecture
 
-ρ = Σi,j αij|ψi⟩⟨ψj| + γΔ(t)
+The platform consists of three primary components:
 
-where γΔ(t) represents the temporal evolution factor of the quantum state.
+1. **Chess Gameplay Engine**
+   - Web-based interface
+   - Real-time move evaluation
+   - Integration with Stockfish engine
 
-The complete board state is represented by the tensor product:
+2. **Dynamic Valuation Model**
+   - Real-time position evaluation
+   - Game theory-based value updates
+   - Performance tracking metrics
 
-|Ψboard⟩ = ⊗i=1,n (Σj αij|ψij⟩)
+3. **Blockchain Layer**
+   - SFT minting and management
+   - Smart contract integration
+   - Marketplace functionality
 
-### 2.2 Multi-Dimensional Entanglement
+## Mathematical Model
 
-We introduce a novel n-dimensional entanglement protocol where pieces can be entangled across multiple quantum dimensions:
+### Move Valuation
 
-|ΨMD⟩ = (1/√d)Σi=1,d |φi⟩A|θi⟩B|ωi⟩C
+The value change (∆) for each move is calculated using:
 
-The entanglement strength coefficient (ESC) between pieces is governed by:
-
-ESC(A,B) = Tr(ρAB log2 ρAB - ρA log2 ρA - ρB log2 ρB)
-
-### 2.3 Quantum Tunneling Mechanics
-
-Pieces can exhibit quantum tunneling through the barrier potential V(x):
-
-T(E) = exp(-2∫√(2m(V(x)-E)/ℏ²)dx)
-
-This enables pieces to "tunnel" through other pieces with a probability defined by the tunneling coefficient.
-
-## 3. Blockchain Architecture
-
-### 3.1 Quantum-Classical State Bridge
-
-```solidity
-contract QuantumStateOracle {
-    using QubitOperations for Qubit;
-    
-    struct QuantumState {
-        mapping(uint256 => ComplexNumber) amplitudes;
-        uint256 entanglementMask;
-        bytes32 quantumSignature;
-        QubitArray[] stateVector;
-    }
-    
-    modifier validateQuantumState(bytes32 stateHash) {
-        require(verifyStateCoherence(stateHash), "Invalid quantum state");
-        require(checkEntanglementConsistency(), "Entanglement violation");
-        _;
-    }
-    
-    function evolveQuantumState(
-        QuantumState memory state,
-        UnaryOperator memory U
-    ) internal returns (QuantumState memory) {
-        return state.applyOperator(U).normalize().verifyConsistency();
-    }
-}
+```
+∆ = S × (Uplayer/Uopponent) × Tmove × Wpiece
 ```
 
-### 3.2 Zero-Knowledge Quantum State Verification
+Where:
+- `S`: Evaluation score of the move
+- `Uplayer/Uopponent`: Utility ratio based on player ratings
+- `Tmove`: Time factor rewarding efficient play
+- `Wpiece`: Current store value of the SFT piece
 
-We implement a novel zkSNARK circuit for quantum state verification:
+### Dynamic Threshold
 
-```solidity
-contract QuantumStateVerifier {
-    using Pairing for *;
-    
-    struct VerificationKey {
-        Pairing.G1Point alpha;
-        Pairing.G2Point beta;
-        Pairing.G2Point gamma;
-        Pairing.G2Point delta;
-        Pairing.G1Point[] IC;
-    }
-    
-    function verifyQuantumState(
-        uint256[2] memory a,
-        uint256[2][2] memory b,
-        uint256[2] memory c,
-        uint256[] memory input
-    ) public view returns (bool) {
-        // verification logic
-    }
-}
+The bonus trigger threshold is calculated as:
+
+```
+T = B × (1 + (Rplayer - Rbase)/KT) × (Nexpected/Nactual + ε)
 ```
 
-## 4. Quantum Game Mechanics
+## Technical Implementation
 
-### 4.1 Superposition Movement Protocol
+### SFT Architecture
 
-The movement probability amplitude is calculated using a modified Schrödinger equation:
+Each chess piece SFT includes:
 
-iℏ∂ψ/∂t = [-ℏ²/2m∇² + V(x,t)]ψ + Hint(ψ)
+**Static Properties**:
+- Piece type
+- Visual characteristics
+- Historical significance
 
-where Hint(ψ) represents the interaction Hamiltonian with other pieces.
+**Dynamic Properties**:
+- Current position
+- Movement history
+- Performance metrics
 
-### 4.2 Quantum Capture Mechanics
+### Zero-Knowledge Proof System
 
-Piece captures are governed by the quantum measurement operator:
+The platform implements zk-SNARKs using:
+- secp256k1 elliptic curve
+- Polynomial encoding of game history
+- Quadratic Arithmetic Programs (QAP)
 
-M̂capture = Π|φi⟩⟨φi| + Σκij|ψi⟩⟨ψj|
+## Security Features
 
-The capture probability is calculated using:
+- Perfect Completeness in zero-knowledge proofs
+- Computational Soundness based on q-SDH and DLP hardness
+- Statistical zero-knowledge with 2^(-λ) security parameter
+- Multi-exponentiation optimization for performance
+- Batched verification for multiple proofs
 
-P(capture) = |⟨ψfinal|M̂capture|ψinitial⟩|²
+## Getting Started
 
-### 4.3 Dynamic Entanglement Protocol
+### Prerequisites
 
-```solidity
-contract EntanglementProtocol {
-    struct EntanglementState {
-        uint256[] entangledPieces;
-        mapping(uint256 => QubitState) quantumStates;
-        bytes32 entanglementSignature;
-    }
-    
-    function createEntanglement(
-        uint256[] memory pieceIds,
-        QubitState[] memory states
-    ) external returns (bytes32 entanglementId) {
-        // entanglement logic
-    }
-}
+- Next.js (v14 or higher)
+- Web3 wallet (MetaMask recommended)
+- Chess engine (Stockfish)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/beyond-checkmate
+
+# Install dependencies
+npm install
+
+# Configure environment variables
+cp .env.example .env
 ```
 
-## 5. NFT Implementation
+## Future Development
 
-### 5.1 Quantum NFT State Representation
+- Mobile platform integration
+- Global tournament system
+- Advanced performance analytics
 
-```solidity
-contract QuantumNFT is ERC721, IQuantumState {
-    struct QuantumMetadata {
-        StateVector[] possibleStates;
-        ComplexNumber[] amplitudes;
-        EntanglementMatrix entanglements;
-        QuantumSignature signature;
-    }
-    
-    mapping(uint256 => QuantumMetadata) private _quantumStates;
-    
-    function evolveState(
-        uint256 tokenId,
-        UnaryOperator memory U
-    ) external returns (StateVector memory) {
-        // State evolution logic
-    }
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
+## Authors
+
+- Ritesh Das - [GitHub](https://github.com/ritzdas70)
+- Sagnik Basak - [GitHub](https://github.com/sagnikbasak2004)
+- Tamojit Das - [GitHub](https://github.com/tamojitdas181007)
+- Jit Roy - [GitHub](https://github.com/royjit0506)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Citation
+
+If you use this project in your research, please cite:
+
+```bibtex
+@conference{das2025beyond,
+  title={Beyond Checkmate: Realizing the Game of Chess as a Game Model with SFTs},
+  author={Das, Ritesh and Basak, Sagnik and Das, Tamojit and Roy, Jit},
+  booktitle={IEEE Conference Proceedings},
+  year={2025}
 }
 ```
-
-### 5.2 Quantum Teleportation Protocol
-
-For piece teleportation across the board:
-
-|ψtele⟩ = (1/√2)(|0⟩A|Φ+⟩BC + |1⟩A|Ψ+⟩BC)
-
-## 6. Mathematical Framework
-
-### 6.1 State Space
-
-The complete quantum game state exists in a modified Hilbert space:
-
-H = H1 ⊗ H2 ⊗ ... ⊗ Hn ⊕ Hent
-
-where Hent represents the entanglement subspace.
-
-### 6.2 Quantum Decision Trees
-
-Strategic decisions are evaluated using quantum decision trees:
-
-D(ψ) = Σi pi|ψi⟩⟨ψi| × U(strategy)
-
-where U(strategy) represents the strategy unitary operator.
-
-## 7. Innovative Features
-
-### 7.1 Quantum Resonance Effects
-
-Pieces can exhibit resonance when their quantum states align:
-
-R(A,B) = |⟨ψA|ψB⟩|² × exp(iφAB)
-
-### 7.2 Time Dilation Mechanics
-
-We implement relativistic time dilation effects:
-
-t' = t/√(1-v²/c²)
-
-where v represents the piece's "velocity" in quantum state space.
-
-## 8. Technical Implementation
-
-### 8.1 Quantum Circuit Implementation
-
-```solidity
-contract QuantumCircuit {
-    struct Circuit {
-        QubitRegister[] qubits;
-        QuantumGate[] gates;
-        MeasurementOperator[] measurements;
-    }
-    
-    function executeCircuit(
-        Circuit memory circuit,
-        StateVector memory initialState
-    ) public view returns (StateVector memory) {
-        // Circuit execution logic
-    }
-}
-```
-
-### 8.2 State Verification System
-
-```solidity
-contract StateVerification {
-    using BloomFilter for StateBloom;
-    
-    struct VerificationProof {
-        bytes32[] stateHashes;
-        uint256[] coherenceMetrics;
-        SignatureArray[] validatorSignatures;
-    }
-    
-    function verifyStateTransition(
-        VerificationProof memory proof
-    ) public view returns (bool) {
-        // Verification logic
-    }
-}
-```
-
-### 8.3 Probability Calculation
-
-The probability of a specific outcome is calculated using:
-
-P(outcome) = Tr(ρM̂outcome)
-
-where ρ is the density matrix and M̂outcome is the measurement operator.
-
-## 9. Future Research Directions
-
-1. Implementation of quantum error correction in game mechanics
-2. Development of quantum-resistant game state verification
-3. Integration of quantum machine learning for strategic analysis
-4. Extension to multi-dimensional quantum gameplay
-
-## 10. Conclusion
-
-This implementation represents a significant advance in quantum gaming mechanics, combining cutting-edge quantum computing principles with blockchain technology to create a unique and sophisticated gaming experience.
-
-## References
-
-[Technical references omitted for brevity]
-
