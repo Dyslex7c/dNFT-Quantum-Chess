@@ -14,7 +14,28 @@ const UserSchema = new mongoose.Schema({
         type: Number,
         default: 700,
         required: true
-    }
+    },
+    pieceNFTs: [
+        {
+            ipfsHash: {
+                type: String,
+                required: true
+            },
+            weight: {
+                type: Number,
+                required: true
+            },
+            name: {
+                type: String,
+                required: true
+            },
+            value: {
+                type: Number,
+                required: true,
+                default: 0.001
+            }
+        }
+    ]
 }, {timestamps: true});
 
 const User = mongoose.model("User", UserSchema);

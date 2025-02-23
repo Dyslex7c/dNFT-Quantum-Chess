@@ -4,7 +4,7 @@ import { RegisterProps } from "../types";
 
 export const register = async (req: Request, res: Response) => {
     try {
-        const { userName, metamaskId }: RegisterProps = req.body;
+        const { userName, metamaskId, pieceNFTs }: RegisterProps = req.body;
 
         const existingUser = await User.findOne({
             $or: [{ userName }, { metamaskId }]
@@ -20,7 +20,8 @@ export const register = async (req: Request, res: Response) => {
 
         const newUser = new User({
             userName,
-            metamaskId
+            metamaskId,
+            pieceNFTs
         });
 
         if (newUser) {
@@ -47,6 +48,22 @@ export const getUser = async (req: Request, res: Response) => {
         res.status(200).json(user);
     } catch (error) {
         console.log("Error in getUser controller", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}
+
+export const fetchMyNFTs = async(req: Request, res: Response) =>  {
+    try {
+        const id = req.query.id;
+        const user = await User.findOne({ metamaskId: id });
+        if (!user) {
+            res.status(400).json({ error: "No such user exists" });
+            return;
+        }
+
+        res.status(200).json(user.pieceNFTs);
+    } catch (error) {
+        console.log("Error in fetchMyNFTs controller", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
 }

@@ -31,6 +31,13 @@ interface NFTMapping {
   };
 }
 
+interface ValuedNFTs {
+  ipfsHash: string;
+  name: string;
+  weight: number;
+  value: number;
+}
+
 export interface Position {
   row: number
   col: number
@@ -81,9 +88,13 @@ interface ChessBoardProps {
   isWhiteTurn: boolean
   isFlipped: boolean
   roomData: RoomProps | null
+  valuedNFTs: ValuedNFTs[]
+  setValuedNFTs: React.Dispatch<React.SetStateAction<ValuedNFTs[]>>
+  count: number;
+  setDel: React.Dispatch<React.SetStateAction<number>>
 }
 
-export default function ChessBoard({ onMove, isWhiteTurn, isFlipped, roomData }: ChessBoardProps) {
+const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setValuedNFTs, count, setDel }: ChessBoardProps) => {
   const [game, setGame] = useState(() => new Chess())
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null)
   const [legalMoves, setLegalMoves] = useState<string[]>([])
@@ -92,7 +103,6 @@ export default function ChessBoard({ onMove, isWhiteTurn, isFlipped, roomData }:
   const [playCaptureSound] = useSound("/capture.mp3")
   const [nftMappings, setNftMappings] = useState<NFTMapping[]>([]);
   const [currentFen, setCurrentFen] = useState(game.fen());
-  //console.log("From ChessBoard", roomData);
 
   useEffect(() => {
     // Load NFTs and create initial mappings
@@ -125,6 +135,25 @@ export default function ChessBoard({ onMove, isWhiteTurn, isFlipped, roomData }:
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (roomData?.p1Id) {
+      const fetchValuedNFTs = async () => {
+        try {
+          const response = await fetch(`http://localhost:5000/api/v1/user/my-nfts?id=${roomData.p1Id}`);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+          setValuedNFTs(data);
+        } catch (error) {
+          console.error('Error fetching valued NFTs:', error);
+        }
+      };
+
+      fetchValuedNFTs();
+    }
+  }, [roomData]);
 
   const getSquareFromIndices = (row: number, col: number): string => FILES[col] + RANKS[row]
 
@@ -186,12 +215,35 @@ export default function ChessBoard({ onMove, isWhiteTurn, isFlipped, roomData }:
                 roomData.R2,
                 selectedSquare,
                 square,
-                currentFen // Pass the current FEN
+                currentFen,
+                setDel
               );
 
-              console.log("Updated Weight:", updatedWeight);
+              const pieceValueMap: Record<string, number> = {
+                p: 1, // pawn
+                n: 3, // knight
+                b: 3, // bishop
+                r: 5, // rook
+                q: 9, // queen
+                k: 15, // king
+              };
+              const p = pieceValueMap[move.piece] || 1;
 
-              // Update the NFT mapping to the new square
+              console.log("Updated Weight:", updatedWeight);
+              console.log(p);
+
+              const newValue = (updatedWeight / p) / 1000;
+
+              setValuedNFTs(prevNFTs =>
+                prevNFTs.map(nft =>
+                  nft.ipfsHash === nftMapping.nft.ipfsHash
+                    ? { ...nft, value: newValue, weight: updatedWeight }
+                    : nft
+                )
+              );
+
+              console.log("Updated NFT Value:", newValue);
+
               setNftMappings(prevMappings =>
                 prevMappings.map(mapping =>
                   mapping.square === selectedSquare
@@ -332,3 +384,5 @@ export default function ChessBoard({ onMove, isWhiteTurn, isFlipped, roomData }:
     </div>
   );
 }
+
+export default ChessBoard;

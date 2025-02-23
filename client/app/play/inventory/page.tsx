@@ -31,9 +31,9 @@ interface NFT {
 }
 
 interface SelectedNFT {
-	ipfsHash: string
-	weight: number
-	name: string
+	ipfsHash: string;
+	weight: number;
+	name: string;
 }
 
 export default function InventoryPage() {
