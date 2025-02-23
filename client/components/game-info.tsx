@@ -21,7 +21,6 @@ export default function GameInfo({ moves }: GameInfoProps) {
     return `${piece}${from}${capture}${to}${check}${checkmate}`
   }
 
-  // Group moves into pairs (white and black)
   const getPairedMoves = () => {
     const pairs = []
     for (let i = 0; i < moves.length; i += 2) {

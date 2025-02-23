@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useSound } from "use-sound"
 import Image from "next/image"
 
-// Import SVG pieces
 import WhitePawn from "@/public/white-pawn.svg"
 import WhiteKnight from "@/public/white-knight.svg"
 import WhiteBishop from "@/public/white-bishop.svg"
@@ -20,8 +19,8 @@ import BlackRook from "@/public/black-rook.svg"
 import BlackQueen from "@/public/black-queen.svg"
 import BlackKing from "@/public/black-king.svg"
 import { updatePieceWeight } from "@/utils/gameEngine"
+import NFTMintingModal from "./nft-minting-modal"
 
-// Add interface for NFT mapping
 interface NFTMapping {
   square: string;
   nft: {
@@ -103,14 +102,14 @@ const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setV
   const [playCaptureSound] = useSound("/capture.mp3")
   const [nftMappings, setNftMappings] = useState<NFTMapping[]>([]);
   const [currentFen, setCurrentFen] = useState(game.fen());
+  const [isCheckmateModalOpen, setIsCheckmateModalOpen] = useState(false)
+  const [winner, setWinner] = useState<"white" | "black" | null>(null)
 
   useEffect(() => {
-    // Load NFTs and create initial mappings
     const storedNFTs = localStorage.getItem("selectedNFTs");
     if (storedNFTs) {
       try {
         const nfts = JSON.parse(storedNFTs);
-        // Map NFTs to initial white piece positions
         const initialMappings: NFTMapping[] = [
           { square: "a2", nft: nfts[0] }, // white pawns
           { square: "b2", nft: nfts[1] },
@@ -158,8 +157,6 @@ const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setV
   const getSquareFromIndices = (row: number, col: number): string => FILES[col] + RANKS[row]
 
   const board = game.board()
-
-  // Find king positions
   const findKingPosition = (color: 'w' | 'b'): string | null => {
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
@@ -203,11 +200,9 @@ const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setV
         });
 
         if (move) {
-          // If it's a white piece being moved, log the NFT details
           if (move.color === 'w') {
             const nftMapping = nftMappings.find(m => m.square === selectedSquare);
             if (nftMapping && roomData) {
-              // Pass the current FEN to the utility function
               const updatedWeight = await updatePieceWeight(
                 nftMapping.nft.ipfsHash || '',
                 nftMapping.nft.weight,
@@ -274,9 +269,12 @@ const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setV
           };
           setLastMove(last);
           onMove(last);
-
-          // Update the FEN state after the move
           setCurrentFen(game.fen());
+
+          if (game.isCheckmate()) {
+            setWinner(isWhiteTurn ? "white" : "black")
+            setIsCheckmateModalOpen(true)
+          }
 
           setGame(new Chess(game.fen()));
           setSelectedSquare(null);
@@ -300,6 +298,7 @@ const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setV
   const checkedKingSquare = isInCheck ? findKingPosition(isWhiteTurn ? 'w' : 'b') : null
 
   return (
+    <>
     <div className="relative aspect-square w-full max-w-3xl mx-auto p-4">
       <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-2xl p-4">
         <div className="grid grid-cols-8 grid-rows-8 h-full w-full gap-px bg-gray-600">
@@ -382,6 +381,13 @@ const ChessBoard = ({ onMove, isWhiteTurn, isFlipped, roomData, valuedNFTs, setV
         </div>
       </div>
     </div>
+    <NFTMintingModal
+        isOpen={isCheckmateModalOpen}
+        onClose={() => setIsCheckmateModalOpen(false)}
+        winner={winner}
+        roomData={roomData}
+      />
+    </>
   );
 }
 

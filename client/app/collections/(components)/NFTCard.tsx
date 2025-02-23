@@ -32,8 +32,6 @@ interface NFTCardProps {
 
 export function NFTCard({ nft, onClick }: NFTCardProps) {
   const [isHovered, setIsHovered] = useState(false)
-
-  // Extracting attributes
   const tier = nft.attributes?.find((attr) => attr.trait_type === "Tier")?.value?.toLowerCase() || "common"
   const weight = nft.attributes?.find((attr) => attr.trait_type === "Weight")?.value || "Unknown"
 
@@ -46,7 +44,6 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
           ? "from-blue-500 to-cyan-600"
           : "from-gray-600 to-gray-700"
 
-  // Compute the image URL
   const imageUrl =
     nft.image.startsWith("http")
       ? nft.image

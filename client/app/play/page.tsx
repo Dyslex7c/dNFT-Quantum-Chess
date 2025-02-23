@@ -45,7 +45,6 @@ export default function Dashboard() {
   const userRank = 42
 
   useEffect(() => {
-    // Animation for the leaderboard
     const interval = setInterval(() => {
       setLeaderboard((prevLeaderboard) => {
         const newLeaderboard = [...prevLeaderboard]
@@ -91,7 +90,6 @@ export default function Dashboard() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Player Stats */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -115,8 +113,6 @@ export default function Dashboard() {
             </div>
             <p className="text-sm text-blue-300">230 XP to next tier</p>
           </motion.div>
-
-          {/* Matchmaking */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -143,8 +139,6 @@ export default function Dashboard() {
               </Button>
             </div>
           </motion.div>
-
-          {/* NFT Marketplace */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -172,8 +166,6 @@ export default function Dashboard() {
               </Button>
             </div>
           </motion.div>
-
-          {/* Leaderboard */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -235,8 +227,6 @@ export default function Dashboard() {
             </div>
           </div>
         </motion.div>
-
-        {/* Chess piece decoration */}
         <div className="fixed -bottom-20 -left-20 opacity-10 pointer-events-none">
           <Image src="/knight.png" alt="Chess Knight" width={300} height={300} />
         </div>
@@ -261,4 +251,3 @@ export default function Dashboard() {
     </main>
   )
 }
-

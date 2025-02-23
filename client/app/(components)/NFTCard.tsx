@@ -4,7 +4,6 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Crown, Sparkles, Shield, Sword, Timer, Eye, Heart, Coins } from "lucide-react"
 
-// Updated NFT interface to match marketplace data
 interface NFT {
   id: number;
   nftContract: string;
@@ -63,7 +62,6 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Determine tier from metadata or default to common
   const getTierFromMetadata = () => {
     const tierAttribute = nftMetadata?.attributes?.find(
       attr => attr.trait_type.toLowerCase() === 'tier'
@@ -86,7 +84,6 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
     attr => attr.trait_type === 'Weight'
   )?.value || 'N/A';
 
-  // Get time left from metadata or default
   const getTimeLeft = () => {
     const timeLeftAttr = nftMetadata?.attributes?.find(
       attr => attr.trait_type === 'Time Left'
@@ -94,7 +91,6 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
     return timeLeftAttr?.value || '24h left';
   };
 
-  // Get statistics from metadata or default
   const getStats = () => {
     const likes = nftMetadata?.attributes?.find(
       attr => attr.trait_type === 'Likes'
@@ -107,16 +103,12 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
 
   const stats = getStats();
 
-  // Helper function to ensure the image URL is valid for Next.js Image
   const getImageUrl = () => {
     const imageUrl = nftMetadata?.image;
     if (!imageUrl) return "/placeholder.svg";
-
-    // If the image URL already starts with http or a slash, return it as-is.
     if (imageUrl.startsWith("http") || imageUrl.startsWith("/")) {
       return imageUrl;
     }
-    // Otherwise, assume it's an IPFS hash and prepend the gateway URL.
     const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY || "https://gateway.pinata.cloud/ipfs/";
     return `${PINATA_GATEWAY}${imageUrl}`;
   };
@@ -138,7 +130,6 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
             transition={{ duration: 1.5 }}
           />
           <div className="relative z-10">
-            {/* Image */}
             <div className="relative aspect-square rounded-lg overflow-hidden mb-4">
               <Image
                 src={getImageUrl()}
@@ -146,7 +137,6 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
                 fill
                 className="object-cover transition-transform group-hover:scale-110"
               />
-              {/* Tier Badge */}
               <div className={`absolute top-2 right-2 px-3 py-1 rounded-full
                 ${tier === "legendary" ? "bg-orange-500"
                   : tier === "epic" ? "bg-purple-500"
@@ -159,8 +149,6 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
                 <span className="text-xs font-semibold capitalize">{tier}</span>
               </div>
             </div>
-
-            {/* Info */}
             <h3 className="text-lg font-bold mb-2">
               {nftMetadata?.name || `NFT #${nft.tokenId}`}
             </h3>
@@ -177,8 +165,6 @@ export function NFTCard({ nft, onClick }: NFTCardProps) {
               <Timer className="w-4 h-4" />
               {getTimeLeft()}
             </div>
-
-            {/* Stats */}
             <div className="flex justify-between items-center">
               <div className="flex gap-3 text-sm text-gray-400">
                 <span className="flex items-center gap-1">
