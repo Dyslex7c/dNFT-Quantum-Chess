@@ -10,6 +10,7 @@ import { app, server } from "./socket/socket";
 import { client } from "./redis/client";
 import connectToMongoDB from "./db/connectToMongoDB";
 import userRoutes from "./routes/user.routes";
+import roomRoutes from "./routes/room.routes";
 
 const PORT = process.env.PORT || 5000;
 
@@ -26,6 +27,7 @@ app.get("/api/v1", (req: Request, res: Response) => {
 });
 
 app.use("/api/v1/user",  userRoutes);
+app.use("/api/v1/room", roomRoutes);
 
 server.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);

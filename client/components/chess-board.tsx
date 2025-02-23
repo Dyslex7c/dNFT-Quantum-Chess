@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Chess, type Square } from "chess.js"
 import { motion, AnimatePresence } from "framer-motion"
 import { useSound } from "use-sound"
@@ -19,6 +19,17 @@ import BlackBishop from "@/public/black-bishop.svg"
 import BlackRook from "@/public/black-rook.svg"
 import BlackQueen from "@/public/black-queen.svg"
 import BlackKing from "@/public/black-king.svg"
+import { updatePieceWeight } from "@/utils/gameEngine"
+
+// Add interface for NFT mapping
+interface NFTMapping {
+  square: string;
+  nft: {
+    name: string;
+    weight: number;
+    ipfsHash?: string;
+  };
+}
 
 export interface Position {
   row: number
@@ -33,6 +44,14 @@ export interface Move {
   isCheck?: boolean
   isCheckmate?: boolean
   isEnPassant?: boolean
+}
+
+interface RoomProps {
+  p1Id: string;
+  p2Id: string;
+  R1: string;
+  R2: string;
+  roomId: string;
 }
 
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"]
@@ -60,15 +79,52 @@ const pieceSvgs: Record<string, Record<string, any>> = {
 interface ChessBoardProps {
   onMove: (move: Move) => void
   isWhiteTurn: boolean
+  isFlipped: boolean
+  roomData: RoomProps | null
 }
 
-export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
+export default function ChessBoard({ onMove, isWhiteTurn, isFlipped, roomData }: ChessBoardProps) {
   const [game, setGame] = useState(() => new Chess())
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null)
   const [legalMoves, setLegalMoves] = useState<string[]>([])
   const [lastMove, setLastMove] = useState<Move | null>(null)
   const [playMoveSound] = useSound("/move.mp3")
   const [playCaptureSound] = useSound("/capture.mp3")
+  const [nftMappings, setNftMappings] = useState<NFTMapping[]>([]);
+  const [currentFen, setCurrentFen] = useState(game.fen());
+  //console.log("From ChessBoard", roomData);
+
+  useEffect(() => {
+    // Load NFTs and create initial mappings
+    const storedNFTs = localStorage.getItem("selectedNFTs");
+    if (storedNFTs) {
+      try {
+        const nfts = JSON.parse(storedNFTs);
+        // Map NFTs to initial white piece positions
+        const initialMappings: NFTMapping[] = [
+          { square: "a2", nft: nfts[0] }, // white pawns
+          { square: "b2", nft: nfts[1] },
+          { square: "c2", nft: nfts[2] },
+          { square: "d2", nft: nfts[3] },
+          { square: "e2", nft: nfts[4] },
+          { square: "f2", nft: nfts[5] },
+          { square: "g2", nft: nfts[6] },
+          { square: "h2", nft: nfts[7] },
+          { square: "a1", nft: nfts[8] }, // white rook
+          { square: "b1", nft: nfts[9] }, // white knight
+          { square: "c1", nft: nfts[10] }, // white bishop
+          { square: "d1", nft: nfts[11] }, // white queen
+          { square: "e1", nft: nfts[12] }, // white king
+          { square: "f1", nft: nfts[13] }, // white bishop
+          { square: "g1", nft: nfts[14] }, // white knight
+          { square: "h1", nft: nfts[15] }, // white rook
+        ];
+        setNftMappings(initialMappings);
+      } catch (error) {
+        console.error("Error parsing stored NFTs:", error);
+      }
+    }
+  }, []);
 
   const getSquareFromIndices = (row: number, col: number): string => FILES[col] + RANKS[row]
 
@@ -87,53 +143,74 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
     return null
   }
 
-  const handleSquareClick = (row: number, col: number) => {
-    const square = getSquareFromIndices(row, col)
-    const piece = game.get(square as Square)
+  const handleSquareClick = async (row: number, col: number) => {
+    const square = getSquareFromIndices(row, col);
+    const piece = game.get(square as Square);
 
-    // If a square is already selected...
     if (selectedSquare) {
-      // If clicking the same square, deselect it
       if (selectedSquare === square) {
-        setSelectedSquare(null)
-        setLegalMoves([])
-        return
+        setSelectedSquare(null);
+        setLegalMoves([]);
+        return;
       }
 
-      // If clicking a different piece of the same color, select the new piece
-      if (piece &&
-        ((isWhiteTurn && piece.color === "w") || (!isWhiteTurn && piece.color === "b"))) {
-        setSelectedSquare(square)
-        const moves = game.moves({ square: square as Square, verbose: true }).map((m) => m.to)
-        setLegalMoves(moves)
-        return
+      if (piece && ((isWhiteTurn && piece.color === "w") || (!isWhiteTurn && piece.color === "b"))) {
+        setSelectedSquare(square);
+        const moves = game.moves({ square: square as Square, verbose: true }).map((m) => m.to);
+        setLegalMoves(moves);
+        return;
       }
 
-      // Try to make a move to the clicked square
       const moveAttempt = game.moves({
         square: selectedSquare as Square,
         verbose: true
-      }).find(m => m.to === square)
+      }).find(m => m.to === square);
 
       if (moveAttempt) {
         const move = game.move({
           from: selectedSquare,
           to: square,
           promotion: "q"
-        })
+        });
 
         if (move) {
-          // Determine if this was an en passant capture
-          const isEnPassant = move.flags.includes('e')
+          // If it's a white piece being moved, log the NFT details
+          if (move.color === 'w') {
+            const nftMapping = nftMappings.find(m => m.square === selectedSquare);
+            if (nftMapping && roomData) {
+              // Pass the current FEN to the utility function
+              const updatedWeight = await updatePieceWeight(
+                nftMapping.nft.ipfsHash || '',
+                nftMapping.nft.weight,
+                roomData.R1,
+                roomData.R2,
+                selectedSquare,
+                square,
+                currentFen // Pass the current FEN
+              );
 
-          if (isEnPassant || move.captured) {
-            playCaptureSound()
-          } else {
-            playMoveSound()
+              console.log("Updated Weight:", updatedWeight);
+
+              // Update the NFT mapping to the new square
+              setNftMappings(prevMappings =>
+                prevMappings.map(mapping =>
+                  mapping.square === selectedSquare
+                    ? { ...mapping, square: square, nft: { ...mapping.nft, weight: updatedWeight } }
+                    : mapping
+                )
+              );
+            }
           }
 
-          const fromRow = RANKS.indexOf(selectedSquare[1])
-          const fromCol = FILES.indexOf(selectedSquare[0])
+          const isEnPassant = move.flags.includes('e');
+          if (isEnPassant || move.captured) {
+            playCaptureSound();
+          } else {
+            playMoveSound();
+          }
+
+          const fromRow = RANKS.indexOf(selectedSquare[1]);
+          const fromCol = FILES.indexOf(selectedSquare[0]);
           const last: Move = {
             from: { row: fromRow, col: fromCol },
             to: { row, col },
@@ -142,28 +219,30 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
             isCheck: game.inCheck(),
             isCheckmate: game.isCheckmate(),
             isEnPassant: isEnPassant
-          }
-          setLastMove(last)
-          onMove(last)
+          };
+          setLastMove(last);
+          onMove(last);
 
-          setGame(new Chess(game.fen()))
-          setSelectedSquare(null)
-          setLegalMoves([])
-          return
+          // Update the FEN state after the move
+          setCurrentFen(game.fen());
+
+          setGame(new Chess(game.fen()));
+          setSelectedSquare(null);
+          setLegalMoves([]);
+          return;
         }
       }
     }
 
-    // If no square is selected and clicking a valid piece, select it
     if (piece && ((isWhiteTurn && piece.color === "w") || (!isWhiteTurn && piece.color === "b"))) {
-      setSelectedSquare(square)
-      const moves = game.moves({ square: square as Square, verbose: true }).map((m) => m.to)
-      setLegalMoves(moves)
+      setSelectedSquare(square);
+      const moves = game.moves({ square: square as Square, verbose: true }).map((m) => m.to);
+      setLegalMoves(moves);
     } else {
-      setSelectedSquare(null)
-      setLegalMoves([])
+      setSelectedSquare(null);
+      setLegalMoves([]);
     }
-  }
+  };
 
   const isInCheck = game.inCheck()
   const checkedKingSquare = isInCheck ? findKingPosition(isWhiteTurn ? 'w' : 'b') : null
@@ -171,19 +250,21 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
   return (
     <div className="relative aspect-square w-full max-w-3xl mx-auto p-4">
       <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-2xl p-4">
-        {/* Chess board grid */}
         <div className="grid grid-cols-8 grid-rows-8 h-full w-full gap-px bg-gray-600">
-          {board.map((rowData, rowIndex) =>
-            rowData.map((pieceObj, colIndex) => {
-              const square = getSquareFromIndices(rowIndex, colIndex)
-              const isBlackSquare = (rowIndex + colIndex) % 2 === 1
-              const isSelected = selectedSquare === square
-              const isLegalMove = legalMoves.includes(square)
+          {(isFlipped ? board.slice().reverse() : board).map((rowData, rowIndex) =>
+            (isFlipped ? rowData.slice().reverse() : rowData).map((pieceObj, colIndex) => {
+              const originalRowIndex = isFlipped ? 7 - rowIndex : rowIndex;
+              const originalColIndex = isFlipped ? 7 - colIndex : colIndex;
+              const square = getSquareFromIndices(originalRowIndex, originalColIndex);
+
+              const isBlackSquare = (originalRowIndex + originalColIndex) % 2 === 1;
+              const isSelected = selectedSquare === square;
+              const isLegalMove = legalMoves.includes(square);
               const isLastMove =
                 lastMove &&
                 (getSquareFromIndices(lastMove.from.row, lastMove.from.col) === square ||
                   getSquareFromIndices(lastMove.to.row, lastMove.to.col) === square)
-              const isCheckedKing = square === checkedKingSquare
+              const isCheckedKing = square === checkedKingSquare;
 
               return (
                 <div
@@ -194,15 +275,14 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
                     ${isLastMove ? "ring-1 ring-yellow-400 ring-opacity-40" : ""}
                     ${isCheckedKing ? "bg-red-500 bg-opacity-50" : ""}
                     transition-all duration-200`}
-                  onClick={() => handleSquareClick(rowIndex, colIndex)}
+                  onClick={() => handleSquareClick(originalRowIndex, originalColIndex)}
                 >
-                  {/* Coordinate labels */}
                   {colIndex === 0 && (
                     <span
                       className={`absolute left-1 top-1 text-xs font-semibold ${isBlackSquare ? "text-gray-300" : "text-gray-600"
                         } opacity-60`}
                     >
-                      {RANKS[rowIndex]}
+                      {RANKS[originalRowIndex]}
                     </span>
                   )}
                   {rowIndex === 7 && (
@@ -210,11 +290,10 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
                       className={`absolute right-1 bottom-1 text-xs font-semibold ${isBlackSquare ? "text-gray-300" : "text-gray-600"
                         } opacity-60`}
                     >
-                      {FILES[colIndex]}
+                      {FILES[originalColIndex]}
                     </span>
                   )}
 
-                  {/* Legal move indicator */}
                   {isLegalMove && (
                     <div
                       className={`absolute inset-2 rounded-full ${pieceObj ? "border-4 border-yellow-400 border-opacity-40" : "bg-yellow-400 bg-opacity-20"
@@ -222,7 +301,6 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
                     ></div>
                   )}
 
-                  {/* Chess piece */}
                   <AnimatePresence>
                     {pieceObj && (
                       <motion.div
@@ -246,11 +324,11 @@ export default function ChessBoard({ onMove, isWhiteTurn }: ChessBoardProps) {
                     )}
                   </AnimatePresence>
                 </div>
-              )
-            }),
+              );
+            })
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }
