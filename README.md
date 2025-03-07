@@ -2,6 +2,8 @@
 
 A revolutionary chess platform that integrates blockchain technology, NFTs, and advanced game theory to create a skill-based value creation system for chess players.
 
+![chess](<image.jpeg>)
+
 ![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)
 
 ## Overview
@@ -123,24 +125,11 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ## Authors
 
-- Ritesh Das - [GitHub](https://github.com/ritzdas70)
-- Sagnik Basak - [GitHub](https://github.com/sagnikbasak2004)
-- Tamojit Das - [GitHub](https://github.com/tamojitdas181007)
-- Jit Roy - [GitHub](https://github.com/royjit0506)
+- Ritesh Das - [GitHub](https://github.com/Dyslex7c)
+- Sagnik Basak - [GitHub](https://github.com/SagnikBasak04)
+- Tamojit Das - [GitHub](https://github.com/Tamoziit)
+- Jit Roy - [GitHub](https://github.com/Jit-Roy)
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Citation
-
-If you use this project in your research, please cite:
-
-```bibtex
-@conference{das2025beyond,
-  title={Beyond Checkmate: Realizing the Game of Chess as a Game Model with SFTs},
-  author={Das, Ritesh and Basak, Sagnik and Das, Tamojit and Roy, Jit},
-  booktitle={IEEE Conference Proceedings},
-  year={2025}
-}
-```
