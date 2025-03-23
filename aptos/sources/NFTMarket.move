@@ -210,6 +210,7 @@ module market_addr::DynamicNFTMarket {
         release(account);
     }
 
+    #[view]
     public fun fetch_market_items(market_address: address): vector<MarketItem> acquires NFTMarket {
         let market = borrow_global<NFTMarket>(market_address);
         let items = vector::empty<MarketItem>();
@@ -228,24 +229,43 @@ module market_addr::DynamicNFTMarket {
         items
     }
 
-    public fun fetch_my_nfts(account: &signer, market_address: address): vector<MarketItem> acquires NFTMarket {
-        let sender = address_of(account);
-        let market = borrow_global<NFTMarket>(market_address);
-        let items = vector::empty<MarketItem>();
-        
-        let i = 0;
-        let len = vector::length(&market.id_to_market_item);
-        
-        while (i < len) {
-            let item = vector::borrow(&market.id_to_market_item, i);
-            if (item.owner == sender) {
-                vector::push_back(&mut items, *item);
-            };
-            i = i + 1;
+    #[view]
+    public fun fetch_nfts_by_owner(owner_address: address, market_address: address): vector<MarketItem> acquires NFTMarket {
+    let market = borrow_global<NFTMarket>(market_address);
+    let items = vector::empty<MarketItem>();
+    
+    let i = 0;
+    let len = vector::length(&market.id_to_market_item);
+    
+    while (i < len) {
+        let item = vector::borrow(&market.id_to_market_item, i);
+        if (item.owner == owner_address) {
+            vector::push_back(&mut items, *item);
         };
-        
-        items
-    }
+        i = i + 1;
+    };
+    
+    items
+}
+
+    public fun fetch_my_nfts(account: &signer, market_address: address): vector<MarketItem> acquires NFTMarket {
+    let sender = address_of(account);
+    let market = borrow_global<NFTMarket>(market_address);
+    let items = vector::empty<MarketItem>();
+    
+    let i = 0;
+    let len = vector::length(&market.id_to_market_item);
+    
+    while (i < len) {
+        let item = vector::borrow(&market.id_to_market_item, i);
+        if (item.owner == sender) {
+            vector::push_back(&mut items, *item);
+        };
+        i = i + 1;
+    };
+    
+    items
+}
 
     public fun fetch_items_created(account: &signer, market_address: address): vector<MarketItem> acquires NFTMarket {
         let sender = address_of(account);
@@ -265,6 +285,25 @@ module market_addr::DynamicNFTMarket {
         
         items
     }
+
+    #[view]
+public fun fetch_items_created_by_seller(seller_address: address, market_address: address): vector<MarketItem> acquires NFTMarket {
+    let market = borrow_global<NFTMarket>(market_address);
+    let items = vector::empty<MarketItem>();
+    
+    let i = 0;
+    let len = vector::length(&market.id_to_market_item);
+    
+    while (i < len) {
+        let item = vector::borrow(&market.id_to_market_item, i);
+        if (item.seller == seller_address) {
+            vector::push_back(&mut items, *item);
+        };
+        i = i + 1;
+    };
+    
+    items
+}
 
     // Helper function to get signer address
     fun address_of(account: &signer): address {
