@@ -139,7 +139,7 @@ function ConnectWalletDialog({ close }: ConnectWalletDialogProps) {
                 ))}
                 <p className="flex gap-1 justify-center items-center text-muted-foreground text-sm">
                   Learn more about{" "}
-                  <AboutAptosConnect.Trigger className="flex gap-1 py-3 items-center text-foreground">
+                  <AboutAptosConnect.Trigger className="flex gap-1 py-3 items-center text-muted-foreground">
                     Aptos Connect <ArrowRight size={16} />
                   </AboutAptosConnect.Trigger>
                 </p>
@@ -223,7 +223,7 @@ function AptosConnectWalletRow({ wallet, onConnect }: WalletRowProps) {
   return (
     <WalletItem wallet={wallet} onConnect={onConnect}>
       <WalletItem.ConnectButton asChild>
-        <Button size="lg" variant="outline" className="w-full gap-4 border border-white/20 text-white hover:bg-white/10">
+        <Button size="lg" variant="outline" className="w-full gap-4 border border-white/20 bg-transparent hover:bg-white/30">
           <WalletItem.Icon className="h-5 w-5" />
           <WalletItem.Name className="text-base font-normal" />
         </Button>
