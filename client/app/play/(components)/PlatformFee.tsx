@@ -1,141 +1,102 @@
-import { useState } from 'react';
-import { useReadContract, useWriteContract, useAccount } from 'wagmi';
-import { parseEther, formatEther } from 'viem';
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Wallet, CheckCircle2, XCircle } from "lucide-react";
-import abi from './platformfeeabi';
+// Updated PlatformFeeModal.tsx
+"use client";
 
-const PLATFORM_FEE_CONTRACT = `0x6774e9894067b22Da5EA22d6F5964c08c0680a59`;
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { Loader2 } from "lucide-react";
 
 interface PlatformFeeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPaymentSuccess: () => void;
+  payPlatformFee: () => Promise<boolean>;
 }
 
-export default function PlatformFeeModal({ isOpen, onClose, onPaymentSuccess }: PlatformFeeModalProps) {
+export default function PlatformFeeModal({ 
+  isOpen, 
+  onClose, 
+  onPaymentSuccess,
+  payPlatformFee 
+}: PlatformFeeModalProps) {
   const [isPaying, setIsPaying] = useState(false);
-  const [error, setError] = useState("");
-  const { address } = useAccount();
+  const [error, setError] = useState<string | null>(null);
+  const { connected } = useWallet();
 
-  const { data: hasPaid } = useReadContract({
-    address: PLATFORM_FEE_CONTRACT as `0x${string}`,
-    abi: abi,
-    functionName: 'hasPaidFee',
-    args: [address],
-  });
+  const handlePayFee = async () => {
+    if (!connected) {
+      setError("Please connect your wallet first");
+      return;
+    }
 
-  const { data: feeAmount }: { data: bigint | undefined } = useReadContract({
-    address: PLATFORM_FEE_CONTRACT as `0x${string}`,
-    abi: abi,
-    functionName: 'platformFee',
-  });
-
-  const { writeContract } = useWriteContract();
-
-  const handlePayment = async () => {
-    if (!address || !feeAmount) return;
-  
+    setError(null);
     setIsPaying(true);
-    setError("");
-  
+    
     try {
-      const config = {
-        address: PLATFORM_FEE_CONTRACT as `0x${string}`,
-        abi: abi,
-        functionName: 'payPlatformFee',
-        value: feeAmount as bigint,
-      };
-  
-      await writeContract(config);
-      setIsPaying(false);
-      onPaymentSuccess();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Transaction failed. Please try again.");
+      console.log("Attempting to pay platform fee...");
+      const success = await payPlatformFee();
+      
+      if (success) {
+        console.log("Platform fee payment successful!");
+        onPaymentSuccess();
+      } else {
+        console.log("Platform fee payment failed.");
+        setError("Transaction failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error in platform fee payment:", error);
+      setError("An error occurred. Please check your wallet and try again.");
+    } finally {
       setIsPaying(false);
     }
   };
 
-  const displayFeeAmount = feeAmount ? formatEther(feeAmount as bigint) : '0';
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Platform Fee
-          </DialogTitle>
-          <DialogDescription className="text-slate-300">
-            Complete a one-time payment to start minting NFTs on our platform
-          </DialogDescription>
+      <DialogContent className="bg-gradient-to-br from-gray-900 to-black border border-purple-500/20 text-white">
+        <DialogHeader>
+          <DialogTitle className="text-2xl text-center">Platform Fee Required</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-4">
+          <p>
+            To use the NFT minting feature, a one-time platform fee of <span className="text-purple-400 font-bold">10 APT</span> is required.
+          </p>
+          <div className="rounded-lg bg-purple-900/20 p-4 border border-purple-500/20">
+            <h3 className="font-semibold mb-2">Benefits include:</h3>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Access to exclusive NFT collections</li>
+              <li>Reduced transaction fees for NFT minting</li>
+              <li>Early access to new chess piece designs</li>
+              <li>Participation in governance decisions</li>
+            </ul>
+          </div>
+          
           {error && (
-            <Alert variant="destructive" className="border-red-500/50 bg-red-900/10">
-              <XCircle className="h-4 w-4 text-red-400" />
-              <AlertDescription className="text-red-200">{error}</AlertDescription>
-            </Alert>
+            <div className="p-3 bg-red-900/30 border border-red-500/30 rounded-md text-red-300 text-sm">
+              {error}
+            </div>
           )}
-
-          <Card className="border border-slate-700 bg-slate-800/50">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-slate-300">Fee Amount</span>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-200">
-                    {displayFeeAmount} POL
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-slate-300">Status</span>
-                <div className="flex items-center gap-2">
-                  {hasPaid ? (
-                    <Badge variant="secondary" className="bg-green-500/20 text-green-200">
-                      <CheckCircle2 className="mr-1 h-3 w-3" />
-                      Paid
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-200">
-                      Pending
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Button
-            onClick={handlePayment}
-            disabled={isPaying || !!hasPaid || !address || !feeAmount}
-            className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isPaying ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Processing Payment
-              </>
-            ) : hasPaid ? (
-              <>
-                <CheckCircle2 className="mr-2 h-5 w-5" />
-                Fee Already Paid
-              </>
-            ) : !address ? (
-              <>
-                <Wallet className="mr-2 h-5 w-5" />
-                Connect Wallet
-              </>
-            ) : (
-              'Pay Platform Fee'
-            )}
-          </Button>
+          
+          <div className="flex justify-center pt-2">
+            <Button
+              onClick={handlePayFee}
+              disabled={isPaying || !connected}
+              className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white px-8 py-2 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)] transition-all duration-300"
+            >
+              {isPaying ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Pay Platform Fee"
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-center text-gray-400 pt-2">
+            This is a one-time fee that grants lifetime access to the platform.
+          </p>
         </div>
       </DialogContent>
     </Dialog>

@@ -8,16 +8,16 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import NFTMintingModal from "./(components)/NFTMintingModal"
 import ProofVerificationModal from './(components)/ProofVerificationModal';
-import { useReadContract } from 'wagmi';
 import PlatformFeeModal from "./(components)/PlatformFee"
 import { useSocketContext } from "@/context/SocketContext"
-import { useAccount } from "wagmi"
-import abi from "./(components)/platformfeeabi"
+import { useWallet } from "@aptos-labs/wallet-adapter-react"
+import { AptosClient, Types } from "aptos"
 
 export default function Dashboard() {
   const [showMintingModal, setShowMintingModal] = useState(false);
   const [showPlatformFeeModal, setShowPlatformFeeModal] = useState(false);
   const [showProofModal, setShowProofModal] = useState(false);
+  const [hasPaidPlatformFee, setHasPaidPlatformFee] = useState(false);
   const [leaderboard, setLeaderboard] = useState([
     { rank: 1, name: "GrandMaster1", elo: 2800, tier: "Grandmaster" },
     { rank: 2, name: "QueenSlayer", elo: 2750, tier: "Master" },
@@ -25,18 +25,12 @@ export default function Dashboard() {
     { rank: 4, name: "BishopBoss", elo: 2650, tier: "Diamond" },
     { rank: 5, name: "RookieNo1", elo: 2600, tier: "Diamond" },
   ]);
-  const { address } = useAccount();
+
+  const { account, connected, signAndSubmitTransaction } = useWallet();
   const { socket } = useSocketContext();
   const [user, setUser] = useState({
-    metamaskId: address,
+    address: account?.address,
     rank: 700
-  })
-
-  const { data: hasPaidPlatformFee } = useReadContract({
-    address: "0x6774e9894067b22Da5EA22d6F5964c08c0680a59",
-    abi: abi,
-    functionName: 'hasPaidFee',
-    args: [address],
   });
 
   const navigation = useRouter();
@@ -44,6 +38,61 @@ export default function Dashboard() {
   const userTier = "Gold"
   const userRank = 42
 
+  // Platform fee contract configuration
+  const moduleAddress = "0x6774e9894067b22Da5EA22d6F5964c08c0680a59";
+  const moduleName = "platform_fee";
+  const functionName = "has_paid_fee";
+
+  // Check if user has paid platform fee
+  useEffect(() => {
+    // Assuming you have imported and set up the wallet adapter properly
+// This assumes the latest version of the Aptos wallet adapter
+
+const checkPlatformFee = async () => {
+  if (!connected || !account?.address) return;
+  
+  try {
+    // Convert address to proper format if needed
+    const addressStr = typeof account.address === 'string' 
+      ? account.address 
+      : account.address.toString();
+    
+    // Create a client instance
+    const client = new AptosClient("https://fullnode.mainnet.aptoslabs.com/v1"); // Use your network URL
+    
+    // Using the generic view function with proper payload structure
+    const payload = {
+      function: `${moduleAddress}::${moduleName}::${functionName}`,
+      type_arguments: [],
+      arguments: [addressStr]
+    };
+    
+    // Try the method that should be available in recent versions
+    const response = await client.view(payload);
+    
+    setHasPaidPlatformFee(response[0]);
+  } catch (error) {
+    console.error("Error checking platform fee:", error);
+    setHasPaidPlatformFee(false);
+  }
+};
+
+    if (connected) {
+      checkPlatformFee();
+    }
+  }, [connected, account?.address]);
+
+  // Update user state when wallet connection changes
+  useEffect(() => {
+    if (connected && account) {
+      setUser({
+        address: account.address,
+        rank: 700
+      });
+    }
+  }, [connected, account]);
+
+  // Leaderboard animation
   useEffect(() => {
     const interval = setInterval(() => {
       setLeaderboard((prevLeaderboard) => {
@@ -60,6 +109,55 @@ export default function Dashboard() {
     return () => clearInterval(interval)
   }, []);
 
+  // Pay platform fee function
+  // Modify the payPlatformFee function in your Dashboard.js
+// More robust implementation with error checking
+// Updated payPlatformFee function without window.aptos dependency
+// Fixed payPlatformFee function
+const payPlatformFee = async () => {
+  if (!connected || !account) {
+    console.log("Wallet not connected");
+    return false;
+  }
+  
+  try {
+    console.log("Creating transaction payload...");
+    
+    // Platform fee amount and address
+    const platformFeeAmount = "10000000"; // 10 APT in octas
+    const platformAddress = "0x9b29080e47a564c1d256ed74663f2ad4bf4b8e8971cd308004038479399464df";
+    
+    // Create transaction payload
+    const payload = {
+      type: "entry_function_payload",
+      function: "0x1::coin::transfer",
+      type_arguments: ["0x1::aptos_coin::AptosCoin"],
+      arguments: [
+        platformAddress,
+        platformFeeAmount
+      ]
+    };
+    
+    console.log("Transaction payload:", payload);
+    
+    // Use signAndSubmitTransaction from wallet adapter
+    const pendingTransaction = await signAndSubmitTransaction(payload);
+    console.log("Transaction submitted successfully:", pendingTransaction);
+    
+    // Wait for transaction confirmation
+    // You may want to add proper transaction confirmation logic here
+    
+    // Store payment status
+    localStorage.setItem(`platformFeePaid_${account.address}`, "true");
+    setHasPaidPlatformFee(true);
+    
+    return true;
+  } catch (error) {
+    console.error("Error paying platform fee:", error);
+    return false;
+  }
+};
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-black via-[#0a0f18] to-black text-white overflow-hidden">
       <div className="container mx-auto px-4 py-8">
@@ -69,11 +167,12 @@ export default function Dashboard() {
           </h1>
           <Button
             onClick={() => {
-              if (!hasPaidPlatformFee) {
-                setShowPlatformFeeModal(true);
-              } else {
-                setShowMintingModal(true);
+              if (!connected) {
+                alert("Please connect your wallet first");
+                return;
               }
+                setShowMintingModal(true);
+              
             }}
             className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white px-6 py-2 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)] transition-all duration-300"
           >
@@ -81,7 +180,13 @@ export default function Dashboard() {
             Mint NFTs
           </Button>
           <Button
-            onClick={() => setShowProofModal(true)}
+            onClick={() => {
+              if (!connected) {
+                alert("Please connect your wallet first");
+                return;
+              }
+              setShowProofModal(true);
+            }}
             className="mr-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-6 py-2 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.5)] hover:shadow-[0_0_30px_rgba(37,99,235,0.7)] transition-all duration-300"
           >
             <Shield className="mr-2 h-5 w-5" />
@@ -97,6 +202,12 @@ export default function Dashboard() {
             className="col-span-1 bg-gradient-to-br from-blue-900/30 to-blue-800/10 rounded-2xl p-6 backdrop-blur-sm border border-blue-500/20 shadow-[0_0_15px_rgba(37,99,235,0.3)]"
           >
             <h2 className="text-xl font-semibold mb-4">Your Stats</h2>
+            <div className="flex items-center justify-between mb-4">
+              <span>Connected:</span>
+              <span className={`font-bold ${connected ? 'text-green-400' : 'text-red-400'}`}>
+                {connected ? 'Yes' : 'No'}
+              </span>
+            </div>
             <div className="flex items-center justify-between mb-4">
               <span>Current Tier:</span>
               <span className="text-yellow-400 font-bold">{userTier}</span>
@@ -219,7 +330,7 @@ export default function Dashboard() {
               <h3 className="text-xl font-semibold mb-2">Legendary Knight</h3>
               <p className="text-gray-400 mb-4">Be the King of Crypto and Conquer the Chain!</p>
               <div className="flex items-center gap-2">
-                <span className="text-purple-400 font-mono">Price: 1170 POL</span>
+                <span className="text-purple-400 font-mono">Price: 1170 APT</span>
                 <Button onClick={() => navigation.push("/marketplace")} size="sm" className="bg-purple-600 hover:bg-purple-700">
                   View in Marketplace
                 </Button>
@@ -236,9 +347,7 @@ export default function Dashboard() {
       </div>
       {showMintingModal && <NFTMintingModal onClose={() => setShowMintingModal(false)} />}
       {showProofModal && <ProofVerificationModal onClose={() => setShowProofModal(false)} />}
-      {showMintingModal && <NFTMintingModal onClose={() => setShowMintingModal(false)} />}
-      {showProofModal && <ProofVerificationModal onClose={() => setShowProofModal(false)} />}
-      {showPlatformFeeModal && (
+      {/* {showPlatformFeeModal && (
         <PlatformFeeModal
           isOpen={showPlatformFeeModal}
           onClose={() => setShowPlatformFeeModal(false)}
@@ -246,8 +355,9 @@ export default function Dashboard() {
             setShowPlatformFeeModal(false);
             setShowMintingModal(true);
           }}
+          payPlatformFee={payPlatformFee}
         />
-      )}
+      )} */}
     </main>
   )
 }

@@ -1,14 +1,14 @@
-module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFTMarket {
+module market_addr::DynamicNFTMarket {
     use std::vector;
+    use std::string::String;
     use aptos_framework::account;
     use aptos_framework::event::{Self, EventHandle};
     use aptos_framework::signer;
     // Note: The 'coin' import is marked as unused in the warnings
     // Uncomment if you plan to use it
     // use aptos_framework::coin;
-    use 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT;
-    use aptos_framework::guid;
-
+    use nft_addr::DynamicNFT;
+    
     struct NFTMarket has key {
         item_ids: u64,
         items_sold: u64,
@@ -25,7 +25,10 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFTMa
         owner: address,
         price: u64,
         sold: bool,
-        ipfs_hash: vector<u8>
+        name: String,
+        trait: String,
+        weight: u64,
+        image_ipfs_hash: String
     }
 
     struct MarketItemCreatedEvent has drop, store {
@@ -36,7 +39,10 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFTMa
         owner: address,
         price: u64,
         sold: bool,
-        ipfs_hash: vector<u8>
+        name: String,
+        trait: String,
+        weight: u64,
+        image_ipfs_hash: String
     }
 
     // Events
@@ -97,8 +103,7 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFTMa
         market_address: address,
         nft_contract: address,
         token_id: u64,
-        price: u64,
-        ipfs_hash: vector<u8>
+        price: u64
     ) acquires NFTMarket, EventStore, Guard {
         let sender = address_of(account);
         
@@ -107,7 +112,14 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFTMa
         let market = borrow_global_mut<NFTMarket>(market_address);
         assert!(price > 0, 101); // Price must be at least 1 wei
         
-        // Check that sent value equals listing price would be handled differently in Aptos
+        // Get metadata directly from NFT
+        let metadata = DynamicNFT::token_metadata(nft_contract, token_id);
+        
+        // Use accessor functions instead of direct field access
+        let name = DynamicNFT::get_metadata_name(&metadata);
+        let trait = DynamicNFT::get_metadata_trait(&metadata);
+        let weight = DynamicNFT::get_metadata_weight(&metadata);
+        let image_ipfs_hash = DynamicNFT::get_metadata_image_ipfs_hash(&metadata);
         
         market.item_ids = market.item_ids + 1;
         let item_id = market.item_ids;
@@ -120,13 +132,16 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFTMa
             owner: @0x0, // Address 0 equivalent
             price: price,
             sold: false,
-            ipfs_hash: ipfs_hash
+            name: name,
+            trait: trait,
+            weight: weight,
+            image_ipfs_hash: image_ipfs_hash
         };
         
         vector::push_back(&mut market.id_to_market_item, market_item);
         
         // Transfer NFT from sender to market
-        NFT::transfer_token(sender, market_address, token_id);
+        DynamicNFT::transfer_token(sender, market_address, token_id);
         
         // Emit event
         let event_store = borrow_global_mut<EventStore>(market_address);
@@ -140,7 +155,10 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFTMa
                 owner: @0x0,
                 price: price,
                 sold: false,
-                ipfs_hash: ipfs_hash
+                name: name,
+                trait: trait,
+                weight: weight,
+                image_ipfs_hash: image_ipfs_hash
             }
         );
         
@@ -180,7 +198,7 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFTMa
         // Verify payment would be handled by Aptos-specific coin functions
         
         // Transfer NFT from contract to buyer
-        NFT::transfer_token(market_address, sender, token_id);
+        DynamicNFT::transfer_token(market_address, sender, token_id);
         
         // Update market item
         item.owner = sender;

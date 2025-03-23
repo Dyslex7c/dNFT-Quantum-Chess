@@ -5,11 +5,12 @@ import { gsap } from "gsap";
 import Lenis from "lenis";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Shield, Trophy, Users, Sparkles, GripHorizontal } from 'lucide-react';
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+//import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useRouter } from "next/navigation";
 import { useSocketContext } from "@/context/SocketContext";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { WalletSelector } from "@/components/connect-wallet";
 
 export default function Home() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -73,7 +74,7 @@ export default function Home() {
           <nav className="container mx-auto px-4 py-6 flex justify-between items-center">
             <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-violet-400">
             </div>
-            <ConnectButton />
+            <WalletSelector />
           </nav>
         </header>
         <div ref={heroRef} className="relative z-10 max-w-6xl mx-auto text-center mt-20">

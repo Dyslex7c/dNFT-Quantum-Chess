@@ -2,14 +2,15 @@
 name = "NFTMarketplace"
 version = "1.0.0"
 authors = []
+upgrade_policy = "compatible"
 
 [addresses]
-NFTMarket = "0xcafe"  # Replace with your actual address or a test address
-NFT = "0xbeef"        # Replace with your actual address or a test address
+nft_addr = "0x9b29080e47a564c1d256ed74663f2ad4bf4b8e8971cd308004038479399464df"  # Replace with your actual address or a test address
+market_addr = "0x9b29080e47a564c1d256ed74663f2ad4bf4b8e8971cd308004038479399464df"        # Replace with your actual address or a test address
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-framework.git"
-rev = "mainnet"
+rev = "testnet"
 subdir = "aptos-framework"
 
 [dev-dependencies]

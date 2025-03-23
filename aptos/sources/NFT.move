@@ -1,40 +1,76 @@
-module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT {
+module nft_addr::DynamicNFT {
     use std::string::{Self, String};
     use std::vector;
     use aptos_framework::account;
     use aptos_framework::event::{Self, EventHandle};
     use aptos_framework::timestamp;
     
-    // Custom implementation instead of Ethereum's ERC721
+    // Metadata structure for the Dynamic NFT
+    struct NFTMetadata has store, drop, copy {
+        name: String,
+        trait: String,
+        weight: u64,  // Mutable property
+        image_ipfs_hash: String
+    }
+    
+    // Custom implementation of the NFT with metadata
     struct TokenData has store {
         id: u64,
-        uri: String,
+        metadata: NFTMetadata,
         owner: address
     }
     
-    struct NFT has key {
+    struct DynamicNFT has key {
         token_ids: u64,
         marketplace_address: address,
-        used_token_uris: vector<String>,
+        used_token_names: vector<String>,
         owner: address,
         tokens: vector<TokenData>
     }
 
     struct NFTMintedEvent has drop, store {
         token_id: u64,
-        token_uri: String,
+        name: String,
+        trait: String,
+        weight: u64,
+        image_ipfs_hash: String,
         owner: address,
+        timestamp: u64
+    }
+
+    struct NFTUpdatedEvent has drop, store {
+        token_id: u64,
+        name: String,
+        weight: u64,
         timestamp: u64
     }
 
     // Events
     struct EventStore has key {
-        nft_minted_events: EventHandle<NFTMintedEvent>
+        nft_minted_events: EventHandle<NFTMintedEvent>,
+        nft_updated_events: EventHandle<NFTUpdatedEvent>
     }
     
     // Reentrancy guard replacement
     struct Guard has key {
         locked: bool
+    }
+
+    // Add public accessor functions for NFTMetadata fields
+    public fun get_metadata_name(metadata: &NFTMetadata): String {
+        metadata.name
+    }
+
+    public fun get_metadata_trait(metadata: &NFTMetadata): String {
+        metadata.trait
+    }
+
+    public fun get_metadata_weight(metadata: &NFTMetadata): u64 {
+        metadata.weight
+    }
+
+    public fun get_metadata_image_ipfs_hash(metadata: &NFTMetadata): String {
+        metadata.image_ipfs_hash
     }
 
     public entry fun initialize(account: &signer, marketplace_address: address) {
@@ -43,16 +79,17 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT {
         assert!(marketplace_address != @0x0, 101); // Invalid marketplace address
         
         // Initialize NFT contract
-        let nft = NFT {
+        let nft = DynamicNFT {
             token_ids: 0,
             marketplace_address: marketplace_address,
-            used_token_uris: vector::empty<String>(),
+            used_token_names: vector::empty<String>(),
             owner: sender,
             tokens: vector::empty<TokenData>()
         };
         
         let event_store = EventStore {
-            nft_minted_events: account::new_event_handle<NFTMintedEvent>(account)
+            nft_minted_events: account::new_event_handle<NFTMintedEvent>(account),
+            nft_updated_events: account::new_event_handle<NFTUpdatedEvent>(account)
         };
         
         let guard = Guard {
@@ -63,7 +100,7 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT {
         move_to(account, event_store);
         move_to(account, guard);
     }
-    
+
     // Simple implementation of reentrancy prevention
     public fun acquire(account: &signer) acquires Guard {
         let sender = address_of(account);
@@ -80,22 +117,27 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT {
 
     public entry fun create_token(
         account: &signer, 
-        token_uri: String
-    ) acquires NFT, EventStore, Guard {
+        name: String,
+        trait: String,
+        weight: u64,
+        image_ipfs_hash: String
+    ) acquires DynamicNFT, EventStore, Guard {
         let sender = address_of(account);
         
         acquire(account);
         
-        assert!(string::length(&token_uri) > 0, 102); // Token URI cannot be empty
+        assert!(string::length(&name) > 0, 102); // Name cannot be empty
+        assert!(string::length(&trait) > 0, 103); // Trait cannot be empty
+        assert!(string::length(&image_ipfs_hash) > 0, 104); // Image IPFS hash cannot be empty
         
-        let nft = borrow_global_mut<NFT>(sender);
+        let nft = borrow_global_mut<DynamicNFT>(sender);
         
-        // Check if token URI is already used
+        // Check if token name is already used
         let i = 0;
-        let uri_len = vector::length(&nft.used_token_uris);
-        while (i < uri_len) {
-            let existing_uri = vector::borrow(&nft.used_token_uris, i);
-            assert!(*existing_uri != token_uri, 103); // Token URI already used
+        let name_len = vector::length(&nft.used_token_names);
+        while (i < name_len) {
+            let existing_name = vector::borrow(&nft.used_token_names, i);
+            assert!(*existing_name != name, 105); // Token name already used
             i = i + 1;
         };
         
@@ -103,13 +145,21 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT {
         nft.token_ids = nft.token_ids + 1;
         let new_item_id = nft.token_ids;
         
-        // Add URI to used list
-        vector::push_back(&mut nft.used_token_uris, token_uri);
+        // Add name to used list
+        vector::push_back(&mut nft.used_token_names, name);
+        
+        // Create metadata
+        let metadata = NFTMetadata {
+            name: name,
+            trait: trait,
+            weight: weight,
+            image_ipfs_hash: image_ipfs_hash
+        };
         
         // Create and store new token
         let token = TokenData {
             id: new_item_id,
-            uri: token_uri,
+            metadata: metadata,
             owner: sender
         };
         
@@ -121,7 +171,10 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT {
             &mut event_store.nft_minted_events,
             NFTMintedEvent {
                 token_id: new_item_id,
-                token_uri: token_uri,
+                name: name,
+                trait: trait,
+                weight: weight,
+                image_ipfs_hash: image_ipfs_hash,
                 owner: sender,
                 timestamp: timestamp::now_seconds()
             }
@@ -130,6 +183,42 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT {
         release(account);
     }
 
+    // Update the weight (mutable property) of the NFT
+    public entry fun update_weight(
+        account: &signer,
+        token_id: u64,
+        new_weight: u64
+    ) acquires DynamicNFT, EventStore, Guard {
+        let sender = address_of(account);
+        
+        acquire(account);
+        
+        assert!(exists<DynamicNFT>(sender), 106); // NFT resource doesn't exist
+        
+        let nft = borrow_global_mut<DynamicNFT>(sender);
+        let (found, index) = find_token_index(&nft.tokens, token_id);
+        assert!(found, 107); // Token not found
+        
+        let token = vector::borrow_mut(&mut nft.tokens, index);
+        assert!(token.owner == sender, 108); // Not token owner
+        
+        // Update weight
+        token.metadata.weight = new_weight;
+        
+        // Emit update event
+        let event_store = borrow_global_mut<EventStore>(sender);
+        event::emit_event(
+            &mut event_store.nft_updated_events,
+            NFTUpdatedEvent {
+                token_id: token_id,
+                name: token.metadata.name,
+                weight: new_weight,
+                timestamp: timestamp::now_seconds()
+            }
+        );
+        
+        release(account);
+    }
     
     // Helper function to find token
     fun find_token_index(tokens: &vector<TokenData>, token_id: u64): (bool, u64) {
@@ -148,34 +237,35 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT {
     }
     
     // Transfer token from one address to another
-    public fun transfer_token(from_address: address, to_address: address, token_id: u64) acquires NFT {
-        assert!(exists<NFT>(from_address), 104); // NFT resource doesn't exist
+    public fun transfer_token(from_address: address, to_address: address, token_id: u64) acquires DynamicNFT {
+        assert!(exists<DynamicNFT>(from_address), 109); // NFT resource doesn't exist
         
-        let nft = borrow_global_mut<NFT>(from_address);
+        let nft = borrow_global_mut<DynamicNFT>(from_address);
         let (found, index) = find_token_index(&nft.tokens, token_id);
-        assert!(found, 105); // Token not found
+        assert!(found, 110); // Token not found
         
         let token = vector::borrow_mut(&mut nft.tokens, index);
-        assert!(token.owner == from_address, 106); // Not token owner
+        assert!(token.owner == from_address, 111); // Not token owner
         
         // Update token owner
         token.owner = to_address;
     }
 
+    #[view]
     public fun get_user_tokens(
         owner_address: address
-    ): (vector<u64>, vector<String>) acquires NFT {
-        assert!(owner_address != @0x0, 107); // Invalid owner address
+    ): (vector<u64>, vector<NFTMetadata>) acquires DynamicNFT {
+        assert!(owner_address != @0x0, 112); // Invalid owner address
         
         let token_ids = vector::empty<u64>();
-        let token_uris = vector::empty<String>();
+        let token_metadata = vector::empty<NFTMetadata>();
         
         // Check if the address has NFT resources
-        if (!exists<NFT>(owner_address)) {
-            return (token_ids, token_uris)
+        if (!exists<DynamicNFT>(owner_address)) {
+            return (token_ids, token_metadata)
         };
         
-        let nft = borrow_global<NFT>(owner_address);
+        let nft = borrow_global<DynamicNFT>(owner_address);
         let i = 0;
         let len = vector::length(&nft.tokens);
         
@@ -183,23 +273,23 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT {
             let token = vector::borrow(&nft.tokens, i);
             if (token.owner == owner_address) {
                 vector::push_back(&mut token_ids, token.id);
-                vector::push_back(&mut token_uris, token.uri);
+                vector::push_back(&mut token_metadata, token.metadata);
             };
             i = i + 1;
         };
         
-        (token_ids, token_uris)
+        (token_ids, token_metadata)
     }
 
     public fun verify_token_ownership(
         token_id: u64, 
         owner_address: address
-    ): bool acquires NFT {
-        if (!exists<NFT>(owner_address)) {
+    ): bool acquires DynamicNFT {
+        if (!exists<DynamicNFT>(owner_address)) {
             return false
         };
         
-        let nft = borrow_global<NFT>(owner_address);
+        let nft = borrow_global<DynamicNFT>(owner_address);
         let (found, index) = find_token_index(&nft.tokens, token_id);
         
         if (!found) {
@@ -210,25 +300,25 @@ module 0x71940f0f7409ef0324c67cca8c9c191682118b19df6b7e2852ffcd23a0d407a1::NFT {
         token.owner == owner_address
     }
     
-    // Find a token by ID
-    public fun token_uri(contract_address: address, token_id: u64): String acquires NFT {
-        assert!(exists<NFT>(contract_address), 108); // NFT resource doesn't exist
+    // Get token metadata by ID
+    public fun token_metadata(contract_address: address, token_id: u64): NFTMetadata acquires DynamicNFT {
+        assert!(exists<DynamicNFT>(contract_address), 113); // NFT resource doesn't exist
         
-        let nft = borrow_global<NFT>(contract_address);
+        let nft = borrow_global<DynamicNFT>(contract_address);
         let (found, index) = find_token_index(&nft.tokens, token_id);
-        assert!(found, 109); // Token not found
+        assert!(found, 114); // Token not found
         
         let token = vector::borrow(&nft.tokens, index);
-        token.uri
+        token.metadata
     }
     
     // Find token owner
-    public fun owner_of(contract_address: address, token_id: u64): address acquires NFT {
-        assert!(exists<NFT>(contract_address), 110); // NFT resource doesn't exist
+    public fun owner_of(contract_address: address, token_id: u64): address acquires DynamicNFT {
+        assert!(exists<DynamicNFT>(contract_address), 115); // NFT resource doesn't exist
         
-        let nft = borrow_global<NFT>(contract_address);
+        let nft = borrow_global<DynamicNFT>(contract_address);
         let (found, index) = find_token_index(&nft.tokens, token_id);
-        assert!(found, 111); // Token not found
+        assert!(found, 116); // Token not found
         
         let token = vector::borrow(&nft.tokens, index);
         token.owner

@@ -1,8 +1,8 @@
 "use client";
 
+import { useAptosAccount } from "@/app/hooks/useAptosAccount";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
-import { useAccount } from "wagmi";
 
 interface SocketContextType {
     socket: Socket | null;
@@ -24,7 +24,7 @@ export const useSocketContext = () => {
 };
 
 export const SocketContextProvider: React.FC<SocketProviderProps> = ({ children }) => {
-    const { address } = useAccount();
+    const { address } = useAptosAccount();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [onlinePlayers, setOnlinePlayers] = useState<string[]>([]);
 

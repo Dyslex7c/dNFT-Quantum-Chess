@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ethers } from "ethers"
+import { Provider, Network, AptosClient, Types, AptosAccount } from "aptos"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -9,12 +9,16 @@ import { TrendingUp, Timer, Search, Loader2, PackageOpen } from "lucide-react"
 import { NFTCard } from "./(components)/NFTCard"
 import { NFTModal } from "./(components)/NFTModal"
 import { useRouter } from "next/navigation"
-import abi from "./abi"
-import { useAccount } from "wagmi"
 
-const CONTRACT_ADDRESS = "0x84D8779e6f128879F99Ea26a2829318867c87721"
-const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY
+// Aptos configuration
+const NFT_MODULE_ADDRESS = "0x9b29080e47a564c1d256ed74663f2ad4bf4b8e8971cd308004038479399464df"
+const MARKET_MODULE_ADDRESS = "0x9b29080e47a564c1d256ed74663f2ad4bf4b8e8971cd308004038479399464df"
+const NETWORK = Network.TESTNET
+const NODE_URL = "https://fullnode.testnet.aptoslabs.com/v1"
+const FAUCET_URL = "https://faucet.testnet.aptoslabs.com"
+const IPFS_GATEWAY = "https://gateway.pinata.cloud/ipfs/"
 
+// NFT structure that matches our DynamicNFT implementation
 interface NFT {
   name: string
   description: string
@@ -29,6 +33,23 @@ interface NFT {
   tier: "legendary" | "epic" | "rare" | "common"
   ipfsHash: string
   nftContract: string
+  weight: number
+  trait: string
+}
+
+// Market item structure that matches our DynamicNFTMarket implementation
+interface MarketItem {
+  itemId: string
+  nftContract: string
+  tokenId: string
+  seller: string
+  owner: string
+  price: string
+  sold: boolean
+  name: string
+  trait: string
+  weight: number
+  imageIpfsHash: string
 }
 
 function Loading() {
@@ -62,66 +83,130 @@ function EmptyState() {
   )
 }
 
-export default function NFTMarketplace() {
+export default function NFTCollection() {
   const [filter, setFilter] = useState<string>("all")
   const [sort, setSort] = useState<string>("price-high")
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null)
   const [nfts, setNfts] = useState<NFT[]>([])
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)
+  const [walletAddress, setWalletAddress] = useState<string | null>(null)
+  const [client, setClient] = useState<AptosClient | null>(null)
 
-  const { address } = useAccount()
   const router = useRouter()
 
+  // Initialize Aptos client
   useEffect(() => {
-    async function fetchNFTs() {
-      setIsLoading(true)
-      if (!window.ethereum || !address) {
-        console.error("MetaMask is not installed or no address found.")
-        return
+    const initializeClient = async () => {
+      const newClient = new AptosClient(NODE_URL)
+      setClient(newClient)
+
+      // Check if Petra wallet is installed
+      if (window.aptos) {
+        try {
+          const response = await window.aptos.connect()
+          setWalletAddress(response.address)
+        } catch (error) {
+          console.error("Failed to connect to wallet:", error)
+        }
+      } else {
+        console.log("Petra wallet not found")
       }
-
-      const provider = new ethers.providers.Web3Provider(window.ethereum)
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, provider)
-
-      try {
-        const [tokenIds, tokenURIs]: [ethers.BigNumber[], string[]] = await contract.getUserTokens(address)
-        console.log(tokenURIs)
-
-        const fetchedNFTs: NFT[] = (
-          await Promise.all(
-            tokenURIs.map(async (uri, index) => {
-              const url = `${PINATA_GATEWAY}${uri}`
-              const tokenId = tokenIds[index]
-              try {
-                const response = await fetch(url)
-                if (!response.ok) {
-                  throw new Error(`Failed to fetch metadata for URI: ${uri}`)
-                }
-                const metadata = await response.json()
-                return {
-                  ...metadata,
-                  tokenId: tokenId.toString(),
-                  ipfsHash: uri,
-                  nftContract: CONTRACT_ADDRESS,
-                }
-              } catch (error) {
-                console.error("Error fetching metadata:", error)
-                return null
-              }
-            }),
-          )
-        ).filter((nft) => nft !== null) as NFT[]
-
-        setNfts(fetchedNFTs)
-      } catch (error) {
-        console.error("Error fetching NFTs:", error)
-      }
-      setIsLoading(false)
     }
 
-    fetchNFTs()
-  }, [address])
+    initializeClient()
+  }, [])
+
+  // Fetch NFTs when wallet is connected
+  useEffect(() => {
+    if (client && walletAddress) {
+      fetchUserNFTs()
+    } else if (client) {
+      setIsLoading(false)
+    }
+  }, [client, walletAddress])
+
+  async function fetchUserNFTs() {
+    setIsLoading(true)
+    
+    if (!client || !walletAddress) {
+      console.error("Client or wallet address not available")
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      // Call view function to get user tokens
+      const payload = {
+        function: `${NFT_MODULE_ADDRESS}::DynamicNFT::get_user_tokens`,
+        type_arguments: [],
+        arguments: [walletAddress]
+      }
+
+      const response = await client.view(payload)
+      
+      if (response && Array.isArray(response) && response.length >= 2) {
+        const tokenIds = response[0] as string[]
+        const metadata = response[1] as any[]
+
+        // Map the response to NFT objects
+        const fetchedNFTs: NFT[] = tokenIds.map((tokenId, index) => {
+          const tokenMetadata = metadata[index]
+          
+          // For simplicity, let's assume we store IPFS hash in the image_ipfs_hash field
+          const ipfsHash = tokenMetadata.image_ipfs_hash
+          
+          // Extract tier from traits if available, or default to "common"
+          const tier = "common" // This would be extracted from metadata in a real implementation
+          
+          return {
+            name: tokenMetadata.name,
+            description: `A unique chess piece - ${tokenMetadata.name}`,
+            image: `${IPFS_GATEWAY}${ipfsHash}`,
+            attributes: [
+              { trait_type: "Tier", value: tier },
+              { trait_type: "Trait", value: tokenMetadata.trait },
+              { trait_type: "Weight", value: tokenMetadata.weight.toString() }
+            ],
+            tokenId: tokenId,
+            price: 0, // Not for sale if in user's collection
+            timeLeft: "",
+            likes: 0,
+            views: 0,
+            tier: tier as any,
+            ipfsHash: ipfsHash,
+            nftContract: NFT_MODULE_ADDRESS,
+            weight: tokenMetadata.weight,
+            trait: tokenMetadata.trait
+          }
+        })
+
+        setNfts(fetchedNFTs)
+      } else {
+        console.error("Unexpected response format:", response)
+        setNfts([])
+      }
+    } catch (error) {
+      console.error("Error fetching NFTs:", error)
+      setNfts([])
+    }
+    
+    setIsLoading(false)
+  }
+
+  // Connect wallet function
+  async function connectWallet() {
+    if (window.aptos) {
+      try {
+        const response = await window.aptos.connect()
+        setWalletAddress(response.address)
+      } catch (error) {
+        console.error("Failed to connect to wallet:", error)
+      }
+    } else {
+      console.log("Petra wallet not found")
+    }
+  }
 
   if (isLoading) return <Loading />
 
@@ -132,8 +217,7 @@ export default function NFTMarketplace() {
     return matchesFilter && matchesSearch
   })
 
-  const sortedNFTs = [...filteredNFTs].sort((a, b) => 
-  {
+  const sortedNFTs = [...filteredNFTs].sort((a, b) => {
     if (sort === "price-high") return b.price - a.price
     if (sort === "price-low") return a.price - b.price
     if (sort === "recent") {
@@ -142,8 +226,7 @@ export default function NFTMarketplace() {
       return dateB.getTime() - dateA.getTime()
     }
     return 0
-  }
-)
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-blue-950 to-black text-white">
@@ -169,6 +252,15 @@ export default function NFTMarketplace() {
               move shapes your legacy.
             </p>
             <div className="flex gap-4">
+              {!walletAddress && (
+                <Button 
+                  size="lg" 
+                  className="bg-purple-600 hover:bg-purple-700 rounded-full"
+                  onClick={connectWallet}
+                >
+                  Connect Wallet
+                </Button>
+              )}
               <Button 
                 size="lg" 
                 className="bg-blue-600 hover:bg-blue-700 rounded-full"
@@ -214,7 +306,22 @@ export default function NFTMarketplace() {
             </div>
           </div>
         </motion.div>
-        {!nfts.length && !address && <EmptyState />}
+        {!nfts.length && !walletAddress && <EmptyState />}
+        {!nfts.length && walletAddress && (
+          <div className="text-center py-20 px-4">
+            <PackageOpen className="w-16 h-16 mx-auto text-blue-400 mb-4" />
+            <h3 className="text-2xl font-semibold text-white mb-2">No NFTs Found</h3>
+            <p className="text-blue-200 mb-6 max-w-md mx-auto">
+              You don't have any NFTs in your collection yet. Visit the marketplace to discover unique chess pieces.
+            </p>
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+              onClick={() => router.push("/marketplace")}
+            >
+              Explore Marketplace
+            </Button>
+          </div>
+        )}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -222,7 +329,7 @@ export default function NFTMarketplace() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
         >
           <AnimatePresence mode="popLayout">
-            {sortedNFTs.reverse().map((nft) => (
+            {sortedNFTs.map((nft) => (
               <NFTCard key={nft.tokenId} nft={nft} onClick={() => setSelectedNFT(nft)} />
             ))}
           </AnimatePresence>
@@ -233,4 +340,17 @@ export default function NFTMarketplace() {
       </AnimatePresence>
     </div>
   )
+}
+
+// Add TypeScript declaration for the Petra wallet
+declare global {
+  interface Window {
+    aptos?: {
+      connect: () => Promise<{ address: string }>
+      isConnected: () => Promise<boolean>
+      account: () => Promise<{ address: string }>
+      disconnect: () => Promise<void>
+      signAndSubmitTransaction: (transaction: any) => Promise<{ hash: string }>
+    }
+  }
 }

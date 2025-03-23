@@ -1,41 +1,32 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
-import { type State, WagmiProvider } from "wagmi";
-import "@rainbow-me/rainbowkit/styles.css";
+import { PropsWithChildren } from "react";
+import { 
+  AptosWalletAdapterProvider,
+} from "@aptos-labs/wallet-adapter-react";
 
-import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
+import { useToast } from "@/hooks/use-toast";
+import { APTOS_API_KEY, NETWORK } from "@/constants/constants";
 
-import { getConfig } from "./config";
-
-type Props = {
-  children: ReactNode;
-  initialState: State | undefined;
-};
-
-export function Providers({ children, initialState }: Props) {
-  const [config] = useState(() => getConfig());
-  const [queryClient] = useState(() => new QueryClient());
+export function WalletProvider({ children }: PropsWithChildren) {
+  const { toast } = useToast();
 
   return (
-    <WagmiProvider config={config} initialState={initialState}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          modalSize="compact"
-          theme={darkTheme({
-            accentColor: "#2563eb",
-            accentColorForeground: "white",
-            borderRadius: "small",
-            fontStack: "system",
-            overlayBlur: "small",
-          })}
-          initialChain={80002}
-        >
-        
-          {children}
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <AptosWalletAdapterProvider
+      autoConnect={true}
+      dappConfig={{
+        network: NETWORK,
+        aptosApiKeys: { [NETWORK]: APTOS_API_KEY } 
+      }}
+      onError={(error) => {
+        toast({
+          variant: "destructive",
+          title: "Wallet Error",
+          description: error?.message || "Unknown wallet error",
+        });
+      }}
+    >
+      {children}
+    </AptosWalletAdapterProvider>
   );
 }
