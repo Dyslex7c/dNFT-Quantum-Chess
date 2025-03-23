@@ -128,46 +128,60 @@ export default function NFTMintingModal({ onClose }: NFTMintingModalProps) {
   }
 
   // 1. Add a function to first initialize the contract if needed
-const initializeNFTContract = async () => {
-  try {
-    // Check if wallet is connected
-    if (!window.aptos) {
-      throw new Error("Petra wallet not found. Please install the Petra extension.");
-    }
-    
-    await window.aptos.connect();
-    const account = await window.aptos.account();
-    const client = new AptosClient(NETWORK_NODE_URL);
-    
-    // Initialize the NFT contract with a marketplace address
-    // You can use your own address as marketplace until you have a real marketplace
-    const payload = {
-      type: "entry_function_payload",
-      function: `${NFT_MODULE_ADDRESS}::DynamicNFT::initialize`,
-      type_arguments: [],
-      arguments: [
-        account.address // Using your own address as marketplace for now
-      ]
-    };
-    
+  const initializeNFTContract = async () => {
     try {
+      // Check if wallet is connected
+      if (!window.aptos) {
+        throw new Error("Petra wallet not found. Please install the Petra extension.");
+      }
+      
+      await window.aptos.connect();
+      const account = await window.aptos.account();
+      const client = new AptosClient(NETWORK_NODE_URL);
+      
+      // Check if the contract is already initialized for this account
+      try {
+        const resources = await client.getAccountResources(account.address);
+        const dynamicNFTType = `${NFT_MODULE_ADDRESS}::DynamicNFT::DynamicNFT`;
+        
+        // If the resource exists, the contract is already initialized
+        const hasResource = resources.some(resource => resource.type === dynamicNFTType);
+        if (hasResource) {
+          console.log("NFT contract already initialized for this account");
+          return true; // Skip initialization, it's already done
+        }
+      } catch (resourceError) {
+        console.warn("Error checking resources:", resourceError);
+        // Continue with initialization attempt
+      }
+      
+      // Only attempt to initialize if not already initialized
+      const payload = {
+        type: "entry_function_payload",
+        function: `${NFT_MODULE_ADDRESS}::DynamicNFT::initialize`,
+        type_arguments: [],
+        arguments: [
+          "0x1" // Using a simple valid address for marketplace
+        ]
+      };
+      
       const response = await window.aptos.signAndSubmitTransaction(payload);
       await client.waitForTransaction(response.hash);
       console.log("NFT contract initialized successfully");
       return true;
     } catch (error) {
-      // If error contains "already has a resource", then initialization already happened
-      if (error.message && error.message.includes("already has a resource")) {
-        console.log("NFT contract already initialized");
+      console.error("Error initializing NFT contract:", error);
+      
+      // Check error message for clues
+      if (error.message && (
+          error.message.includes("already has a resource") ||
+          error.message.includes("already published"))) {
+        console.log("NFT contract already initialized (from error message)");
         return true;
       }
       throw error;
     }
-  } catch (error) {
-    console.error("Error initializing NFT contract:", error);
-    throw error;
-  }
-};
+  };
 
 // 2. Update your mintNFTs function to initialize first
 const mintNFTs = async () => {

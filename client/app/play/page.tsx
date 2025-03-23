@@ -58,7 +58,7 @@ const checkPlatformFee = async () => {
       : account.address.toString();
     
     // Create a client instance
-    const client = new AptosClient("https://fullnode.mainnet.aptoslabs.com/v1"); // Use your network URL
+    const client = new AptosClient("https://fullnode.testnet.aptoslabs.com/v1"); // Use your network URL
     
     // Using the generic view function with proper payload structure
     const payload = {

@@ -1,74 +1,63 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { X, ExternalLink, Clock, User, Tag, Weight } from "lucide-react"
-import { createMarketSale, fetchMarketItems } from "@/utils/market"
+import { X, ExternalLink, Weight, Tag } from "lucide-react"
+import { createMarketSale } from "@/utils/market"
 
 interface NFT {
-  id: number;
-  nftContract: string;
-  tokenId: number;
+  item_id: number;
+  nft_contract: string;
+  token_id: number;
   seller: string;
   owner: string;
-  price: string;
+  price: number;
   sold: boolean;
-  ipfsHash: string;
-}
-
-interface NFTMetadata {
   name: string;
-  description: string;
-  image: string;
-  attributes: {
-    trait_type: string;
-    value: string;
-  }[];
+  trait: string;
+  weight: number;
+  image_ipfs_hash: string;
 }
 
 interface NFTModalProps {
   nft: NFT;
   onClose: () => void;
   onBuy: () => void;
+  marketAddress: string;
   loading?: boolean;
 }
 
-export function NFTModal({ nft, onClose, onBuy, loading = false }: NFTModalProps) {
-  const [nftMetadata, setNftMetadata] = useState<NFTMetadata | null>(null);
-
-  useEffect(() => {
-    const fetchMetadata = async () => {
-      try {
-        const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY;
-        if (!PINATA_GATEWAY) {
-          throw new Error("Pinata gateway URL not configured");
-        }
-        const response = await fetch(`${PINATA_GATEWAY}${nft.ipfsHash}`);
-        if (response.ok) {
-          const data = await response.json();
-          setNftMetadata(data);
-        }
-      } catch (error) {
-        console.error("Error fetching NFT metadata:", error);
-      }
-    };
-
-    fetchMetadata();
-  }, [nft.ipfsHash]);
-
-  const getImageUrl = () => {
-    const imageUrl = nftMetadata?.image;
-    if (!imageUrl) return "/placeholder.svg";
-    if (imageUrl.startsWith("http") || imageUrl.startsWith("/")) {
-      return imageUrl;
-    }
-    const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY || "https://gateway.pinata.cloud/ipfs/";
-    return `${PINATA_GATEWAY}${imageUrl}`;
+export function NFTModal({ nft, onClose, onBuy, marketAddress, loading = false }: NFTModalProps) {
+  // Format price to display properly
+  const formatPrice = (price: number) => {
+    return (price / 100000000).toFixed(6); // Convert Aptos octas to APT
   };
 
-  const weight = nftMetadata?.attributes?.find(
-    (attr) => attr.trait_type === 'Weight'
-  )?.value || 'N/A';
+  const getImageUrl = () => {
+    const PINATA_GATEWAY = process.env.NEXT_PUBLIC_PINATA_GATEWAY || "https://gateway.pinata.cloud/ipfs/";
+    if (!nft.image_ipfs_hash) return "/placeholder.svg";
+    return `${PINATA_GATEWAY}${nft.image_ipfs_hash}`;
+  };
+
+  const handleBuy = async () => {
+    try {
+      // Call the buy function and pass the result to onBuy
+      const result = await createMarketSale(
+        marketAddress,
+        nft.nft_contract,
+        nft.item_id
+      );
+      
+      if (result.success) {
+        onBuy();
+      } else {
+        console.error("Failed to buy NFT:", result.error);
+        // You would implement error handling here
+      }
+    } catch (error) {
+      console.error("Error buying NFT:", error);
+    }
+  };
 
   return (
     <motion.div
@@ -96,7 +85,7 @@ export function NFTModal({ nft, onClose, onBuy, loading = false }: NFTModalProps
             <div className="relative aspect-square rounded-lg overflow-hidden">
               <Image 
                 src={getImageUrl()} 
-                alt={nftMetadata?.name || `NFT #${nft.tokenId}`} 
+                alt={nft.name || `NFT #${nft.token_id}`} 
                 fill 
                 className="object-cover" 
               />
@@ -104,36 +93,36 @@ export function NFTModal({ nft, onClose, onBuy, loading = false }: NFTModalProps
           </div>
           <div className="w-full md:w-1/2">
             <h2 className="text-2xl font-bold mb-2">
-              {nftMetadata?.name || `NFT #${nft.tokenId}`}
+              {nft.name || `NFT #${nft.token_id}`}
             </h2>
             <p className="text-gray-400 mb-4">
-              {nftMetadata?.description || "A unique chess piece NFT with special powers and abilities."}
+              A {nft.trait.toLowerCase()} chess piece NFT with special powers and abilities.
             </p>
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2">
                 <Tag className="w-5 h-5 text-blue-400" />
-                <span className="text-gray-300">Price: {nft.price} ETH</span>
+                <span className="text-gray-300">Price: {formatPrice(nft.price)} APT</span>
               </div>
               <div className="flex items-center gap-2">
                 <Weight className="w-5 h-5 text-blue-400" />
-                <span className="text-gray-300">Weight: {weight}</span>
+                <span className="text-gray-300">Weight: {nft.weight}</span>
               </div>
             </div>
             <div className="space-y-2">
               <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700" 
-                onClick={onBuy}
+                onClick={handleBuy}
                 disabled={loading}
               >
                 {loading ? "Processing..." : "Buy Now"}
               </Button>
               <Button 
                 variant="outline" 
-                className="w-full text-black hover:text-blue-600"
-                onClick={() => window.open(`https://testnets.opensea.io/assets/amoy/${nft.nftContract}/${nft.tokenId}`, '_blank')}
+                className="w-full text-gray-400 hover:text-blue-600"
+                onClick={() => window.open(`https://explorer.aptoslabs.com/account/${nft.nft_contract}`, '_blank')}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                View on OpenSea
+                View on Aptos Explorer
               </Button>
             </div>
           </div>

@@ -7,22 +7,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NFTCard } from "../(components)/NFTCard";
 import { NFTModal } from "../(components)/NFTModal";
 import { useRouter } from "next/navigation";
-import { fetchMarketItems, createMarketSale } from "@/utils/market";
+import { createMarketSale, fetchMarketItems } from "@/utils/market";
 
+// Type definition aligned with the Move contract structure
 type NFT = {
-  id: number;
+  itemId: number;
   nftContract: string;
   tokenId: number;
   seller: string;
   owner: string;
   price: string;
   sold: boolean;
-  ipfsHash: string;
   name: string;
-  image: string;
-  timeLeft: string;
-  likes: number;
-  tier: string;
+  trait: string;
+  weight: number;
+  imageIpfsHash: string;
+  tier: string; // Derived from trait for frontend categorization
 };
 
 export default function NFTMarketplace() {
@@ -32,40 +32,70 @@ export default function NFTMarketplace() {
   const [nfts, setNfts] = useState<NFT[]>([]);
   const [loading, setLoading] = useState(false);
   
+  // Contract addresses
+  const MARKET_ADDRESS = "0x9b29080e47a564c1d256ed74663f2ad4bf4b8e8971cd308004038479399464df";
+  
   const router = useRouter();
 
   useEffect(() => {
     loadNFTs();
   }, []);
 
+  // Map trait to tier for UI display
+  const mapTraitToTier = (trait: string): string => {
+    const lowerTrait = trait.toLowerCase().trim();
+    if (lowerTrait.includes("legendary")) return "legendary";
+    if (lowerTrait.includes("epic")) return "epic";
+    if (lowerTrait.includes("rare")) return "rare";
+    return "common";
+  };
+
   const loadNFTs = async () => {
     try {
       setLoading(true);
-      const items = await fetchMarketItems();
+      
+      // Fetch market items from your Aptos contract
+      const items = await fetchMarketItems(MARKET_ADDRESS);
       console.log("Raw fetched NFTs:", items);
-      const itemsWithNormalizedTier: NFT[] = items.map((item: NFT) => {
-        const normalizedTier = item.tier ? item.tier.toLowerCase().trim() : "common";
-        console.log(`NFT ID: ${item.id}, Original Tier: ${item.tier}, Normalized Tier: ${normalizedTier}`);
+      
+      // Map Move contract fields to frontend model
+      const processedItems: NFT[] = items.map((item: any) => {
+        // Map the trait to a tier for UI filtering
+        const tier = mapTraitToTier(item.trait);
+        
         return {
-          ...item,
-          tier: normalizedTier,
+          itemId: item.item_id,
+          nftContract: item.nft_contract,
+          tokenId: item.token_id,
+          seller: item.seller,
+          owner: item.owner,
+          price: item.price.toString(),
+          sold: item.sold,
+          name: item.name,
+          trait: item.trait,
+          weight: item.weight,
+          imageIpfsHash: item.image_ipfs_hash,
+          tier: tier
         };
       });
 
-      setNfts(itemsWithNormalizedTier);
-      console.log("Final NFTs after processing:", itemsWithNormalizedTier);
+      setNfts(processedItems);
+      console.log("Final NFTs after processing:", processedItems);
     } catch (error) {
+      console.error("Failed to load NFTs:", error);
       alert("Failed to load NFTs. Please check your wallet connection.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Filter NFTs based on tier (derived from trait)
   const filteredNFTs = nfts.filter((nft) => {
     console.log(`Filtering: NFT Tier = ${nft.tier}, Selected Filter = ${filter}`);
-    return filter === "all" || nft.tier.toLowerCase() === filter.toLowerCase();
+    return filter === "all" || nft.tier === filter;
   });
 
+  // Sort NFTs based on selected criteria
   const sortedNFTs = [...filteredNFTs].sort((a, b) => {
     switch (sort) {
       case "price-high":
@@ -73,16 +103,23 @@ export default function NFTMarketplace() {
       case "price-low":
         return Number.parseFloat(a.price) - Number.parseFloat(b.price);
       case "recent":
-        return b.id - a.id;
+        return b.itemId - a.itemId;
       default:
         return 0;
     }
   });
 
+  // Handle NFT purchase using Aptos contract
   const handleBuyNFT = async (nft: NFT) => {
     try {
       setLoading(true);
-      const result = await createMarketSale(nft.id, nft.price);
+      
+      // Call create_market_sale function in Move contract
+      const result = await createMarketSale(
+        MARKET_ADDRESS,
+        nft.nftContract,
+        nft.itemId
+      );
       
       if (result.success) {
         alert("NFT purchased successfully!");
@@ -92,6 +129,7 @@ export default function NFTMarketplace() {
         throw new Error(result.error || "Transaction failed");
       }
     } catch (error) {
+      console.error("Purchase error:", error);
       alert(error instanceof Error ? error.message : "Failed to purchase NFT. Please try again.");
     } finally {
       setLoading(false);
@@ -165,7 +203,7 @@ export default function NFTMarketplace() {
             ) : sortedNFTs.length > 0 ? (
               sortedNFTs.map((nft) => (
                 <NFTCard
-                  key={nft.id}
+                  key={nft.itemId}
                   nft={nft}
                   onClick={() => setSelectedNFT(nft)}
                 />
